@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>{{ report.client_name }} - Inspection Report</title>
+    <style>
+      body { font-family: Arial, sans-serif; color: #1f2933; margin: 40px; }
+      h1, h2, h3 { color: #102a43; }
+      .meta { color: #52606d; }
+      .finding { border-top: 1px solid #d9e2ec; padding: 16px 0; }
+      .severity { font-weight: bold; text-transform: uppercase; }
+    </style>
+  </head>
+  <body>
+    <h1>Home Inspection Report</h1>
+    <p class="meta">{{ report.property_address }}</p>
+    <p>{{ report.inspection_date }} | {{ report.inspector_name }} | {{ report.company_name }}</p>
+
+    <h2>Executive Summary</h2>
+    {% for severity, findings in summary.items() %}
+      <h3>{{ severity }}</h3>
+      <ul>
+        {% for finding in findings %}
+          <li>{{ finding.category }}: {{ finding.title }}</li>
+        {% endfor %}
+      </ul>
+    {% endfor %}
+
+    <h2>Detailed Findings</h2>
+    {% for finding in findings %}
+      <div class="finding">
+        <h3>{{ finding.category }} - {{ finding.title }}</h3>
+        <p class="severity">{{ finding.severity }}</p>
+        <p><strong>Observation:</strong> {{ finding.observation }}</p>
+        <p><strong>Recommendation:</strong> {{ finding.recommendation }}</p>
+        {% if finding.notes %}<p><strong>Notes:</strong> {{ finding.notes }}</p>{% endif %}
+      </div>
+    {% endfor %}
+  </body>
+</html>

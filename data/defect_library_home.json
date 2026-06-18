@@ -1,0 +1,66 @@
+[
+  {
+    "id": "roof-001",
+    "category": "Roof",
+    "title": "Damaged or missing shingles",
+    "severity": "Moderate",
+    "observation": "One or more roof shingles are damaged, loose, or missing. This condition can allow moisture intrusion if not corrected.",
+    "recommendation": "Have a qualified roofing contractor evaluate and repair the affected roof covering areas."
+  },
+  {
+    "id": "electrical-001",
+    "category": "Electrical",
+    "title": "Missing GFCI protection",
+    "severity": "Major",
+    "observation": "Ground-fault circuit interrupter protection was not observed at one or more required receptacle locations.",
+    "recommendation": "Have a licensed electrician install GFCI protection where required for improved shock protection."
+  },
+  {
+    "id": "plumbing-001",
+    "category": "Plumbing",
+    "title": "Active plumbing leak",
+    "severity": "Major",
+    "observation": "An active leak was observed at a plumbing supply or drain component.",
+    "recommendation": "Have a licensed plumber repair the leak and evaluate adjacent materials for moisture damage."
+  },
+  {
+    "id": "hvac-001",
+    "category": "HVAC",
+    "title": "Dirty HVAC filter",
+    "severity": "Minor",
+    "observation": "The HVAC air filter is dirty or overdue for replacement. Restricted airflow can reduce system performance.",
+    "recommendation": "Replace the filter and continue regular filter maintenance according to the manufacturer instructions."
+  },
+  {
+    "id": "safety-001",
+    "category": "Safety",
+    "title": "Missing smoke alarm",
+    "severity": "Major",
+    "observation": "A smoke alarm was missing, not observed, or not present in an expected location.",
+    "recommendation": "Install smoke alarms according to current safety standards and local requirements."
+  },
+  {
+    "id": "exterior-001",
+    "category": "Exterior",
+    "title": "Negative grading near foundation",
+    "severity": "Moderate",
+    "observation": "Soil or hardscape appears to slope toward the foundation in one or more areas. This can direct water toward the structure.",
+    "recommendation": "Improve grading or drainage so water flows away from the foundation."
+  },
+  {
+    "id": "interior-001",
+    "category": "Interior",
+    "title": "Moisture staining observed",
+    "severity": "Moderate",
+    "observation": "Moisture staining was observed at an interior surface. The source and current activity could not be fully determined during a visual inspection.",
+    "recommendation": "Further evaluate the area, identify the moisture source, and repair as needed."
+  },
+  {
+    "id": "limitations-001",
+    "category": "Limitations",
+    "title": "Limited attic access",
+    "severity": "Informational",
+    "observation": "Attic inspection was limited due to access, insulation, stored items, low clearance, or other constraints.",
+    "recommendation": "Review seller disclosures and consider further evaluation if concerns are present."
+  }
+]
