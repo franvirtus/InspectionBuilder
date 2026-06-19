@@ -681,9 +681,11 @@ def inject_css() -> None:
             box-shadow: 0 14px 36px rgba(47,125,242,.28);
         }
         .stDownloadButton > button {
-            min-height: 2.75rem;
+            min-height: 2.55rem;
+            padding: 0.55rem 1.05rem;
             background: linear-gradient(135deg, var(--ib-blue), var(--ib-blue-2)) !important;
             border: 0 !important;
+            border-radius: 10px !important;
             color: white !important;
             box-shadow: 0 14px 36px rgba(47,125,242,.32);
         }
@@ -934,15 +936,17 @@ def render_generate_result(context_key: str) -> None:
         st.caption("Your PDF is ready.")
         if pdf_path.exists():
             with pdf_path.open("rb") as pdf_file:
-                st.download_button(
-                    "Download PDF",
-                    pdf_file,
-                    file_name=pdf_path.name,
-                    mime="application/pdf",
-                    type="primary",
-                    use_container_width=True,
-                    key=f"download_pdf_{context_key}_{safe_report_id}",
-                )
+                download_col, _ = st.columns([0.24, 0.76])
+                with download_col:
+                    st.download_button(
+                        "Download PDF",
+                        pdf_file,
+                        file_name=pdf_path.name,
+                        mime="application/pdf",
+                        type="primary",
+                        use_container_width=True,
+                        key=f"download_pdf_{context_key}_{safe_report_id}",
+                    )
 
 
 def add_finding_from_form(photos: list[Any] | None, category: str, severity: str, title: str, location: str, observation: str, recommendation: str, notes: str) -> None:
