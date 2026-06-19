@@ -761,6 +761,10 @@ def inject_css() -> None:
             --ib-blue-2: #2f7df2;
             --ib-control: #162033;
             --ib-control-hover: #1d2a3a;
+            --ib-danger: #ef4444;
+            --ib-danger-bg: rgba(239,68,68,.10);
+            --ib-danger-hover: rgba(239,68,68,.18);
+            --ib-focus: rgba(79,156,255,.42);
         }
         html, body, [data-testid="stAppViewContainer"] {
             background: radial-gradient(circle at top left, rgba(79,156,255,.12), transparent 32rem), var(--ib-bg);
@@ -793,6 +797,10 @@ def inject_css() -> None:
             font-weight: 650;
             transition: background .16s ease, color .16s ease, border-color .16s ease;
         }
+        div[data-testid="stTabs"] button:focus-visible {
+            outline: 2px solid var(--ib-focus);
+            outline-offset: 2px;
+        }
         div[data-testid="stTabs"] button:hover {
             background: var(--ib-control-hover);
             border-color: var(--ib-border);
@@ -821,7 +829,15 @@ def inject_css() -> None:
             border-radius: 10px;
             border: 1px solid var(--ib-border);
             font-weight: 700;
+            min-height: 2.45rem;
+            padding: .5rem .95rem;
             transition: transform .12s ease, background .16s ease, border-color .16s ease, box-shadow .16s ease;
+        }
+        .stButton > button:focus-visible,
+        .stDownloadButton > button:focus-visible {
+            outline: 2px solid var(--ib-focus) !important;
+            outline-offset: 2px;
+            box-shadow: 0 0 0 3px rgba(79,156,255,.16) !important;
         }
         .stButton > button:not([kind="primary"]) {
             background: var(--ib-control) !important;
@@ -842,6 +858,31 @@ def inject_css() -> None:
         .stButton > button:not([kind="primary"]) p,
         .stButton > button:not([kind="primary"]) span {
             color: var(--ib-text) !important;
+        }
+        div:has(> .ib-secondary-action) + div[data-testid="stButton"] button {
+            background: var(--ib-control) !important;
+            border: 1px solid var(--ib-border) !important;
+            color: var(--ib-text) !important;
+        }
+        div:has(> .ib-secondary-action) + div[data-testid="stButton"] button:hover {
+            background: var(--ib-control-hover) !important;
+            border-color: #3a4a60 !important;
+        }
+        div:has(> .ib-danger-action) + div[data-testid="stButton"] button {
+            background: var(--ib-danger-bg) !important;
+            border: 1px solid rgba(239,68,68,.42) !important;
+            color: #fecaca !important;
+            box-shadow: none !important;
+        }
+        div:has(> .ib-danger-action) + div[data-testid="stButton"] button:hover {
+            background: var(--ib-danger-hover) !important;
+            border-color: rgba(239,68,68,.66) !important;
+            color: #fee2e2 !important;
+            transform: translateY(-1px);
+        }
+        div:has(> .ib-danger-action) + div[data-testid="stButton"] button p,
+        div:has(> .ib-danger-action) + div[data-testid="stButton"] button span {
+            color: #fecaca !important;
         }
         .stButton > button[kind="primary"], .stDownloadButton > button[kind="primary"] {
             background: linear-gradient(135deg, var(--ib-blue), var(--ib-blue-2));
@@ -888,7 +929,8 @@ def inject_css() -> None:
         div[data-testid="stTextArea"] textarea:focus,
         div[data-testid="stDateInput"] input:focus {
             border-color: var(--ib-blue) !important;
-            box-shadow: 0 0 0 1px rgba(79,156,255,.4) !important;
+            box-shadow: 0 0 0 1px rgba(79,156,255,.4), 0 0 0 4px rgba(79,156,255,.12) !important;
+            outline: none !important;
         }
         div[data-testid="stTextInput"] input::placeholder,
         div[data-testid="stTextArea"] textarea::placeholder {
@@ -898,6 +940,10 @@ def inject_css() -> None:
         div[data-testid="stSelectbox"] [data-baseweb="select"] svg {
             color: var(--ib-text) !important;
             fill: var(--ib-text) !important;
+        }
+        div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within {
+            border-color: var(--ib-blue) !important;
+            box-shadow: 0 0 0 1px rgba(79,156,255,.4), 0 0 0 4px rgba(79,156,255,.12) !important;
         }
         div[data-testid="stFileUploader"] section {
             background: rgba(22,32,51,.72) !important;
@@ -912,6 +958,11 @@ def inject_css() -> None:
             background: var(--ib-control) !important;
             border: 1px solid var(--ib-border) !important;
             color: var(--ib-text) !important;
+            border-radius: 10px !important;
+        }
+        div[data-testid="stFileUploader"] section button:hover {
+            background: var(--ib-control-hover) !important;
+            border-color: #3a4a60 !important;
         }
         div[data-testid="stForm"] {
             border-color: var(--ib-border) !important;
@@ -1286,6 +1337,7 @@ def render_dashboard(property_address: str) -> None:
                 unsafe_allow_html=True,
             )
             remove_key = f"remove_dashboard_{display_index}_{original_index}_{safe_slug(finding.get('title', 'finding'))}"
+            action_col.markdown("<span class='ib-danger-action'></span>", unsafe_allow_html=True)
             if action_col.button(t("remove"), key=remove_key):
                 st.session_state["findings"].pop(original_index)
                 st.rerun()
@@ -1322,6 +1374,7 @@ def render_add_finding(defects: list[dict[str, Any]]) -> None:
                     """,
                     unsafe_allow_html=True,
                 )
+                st.markdown("<span class='ib-secondary-action'></span>", unsafe_allow_html=True)
                 if st.button(t("use_this_defect"), key=f"use-{defect['id']}"):
                     st.session_state["category"] = defect["category"]
                     st.session_state["severity"] = defect["severity"]
@@ -1379,6 +1432,7 @@ def render_add_finding(defects: list[dict[str, Any]]) -> None:
                 unsafe_allow_html=True,
             )
             remove_key = f"remove_added_{display_index}_{original_index}_{safe_slug(finding.get('title', 'finding'))}"
+            remove_col.markdown("<span class='ib-danger-action'></span>", unsafe_allow_html=True)
             if remove_col.button(t("remove"), key=remove_key):
                 st.session_state["findings"].pop(original_index)
                 st.rerun()
