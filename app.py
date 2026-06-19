@@ -618,14 +618,16 @@ def inject_css() -> None:
         <style>
         :root {
             --ib-bg: #151b24;
-            --ib-panel: #1b222d;
+            --ib-panel: #111827;
             --ib-panel-2: #202936;
             --ib-sidebar: #111720;
-            --ib-border: rgba(255,255,255,.09);
+            --ib-border: #263241;
             --ib-muted: #9ba8b8;
             --ib-text: #f6f8fb;
             --ib-blue: #4f9cff;
             --ib-blue-2: #2f7df2;
+            --ib-control: #162033;
+            --ib-control-hover: #1d2a3a;
         }
         html, body, [data-testid="stAppViewContainer"] {
             background: radial-gradient(circle at top left, rgba(79,156,255,.12), transparent 32rem), var(--ib-bg);
@@ -646,13 +648,26 @@ def inject_css() -> None:
         }
         h1, h2, h3 { letter-spacing: -.025em; }
         [data-testid="stHeader"] { background: rgba(21,27,36,.72); backdrop-filter: blur(14px); }
+        div[data-testid="stTabs"] [role="tablist"] {
+            gap: .35rem;
+            border-bottom: 1px solid var(--ib-border);
+        }
         div[data-testid="stTabs"] button {
             border-radius: 10px;
+            border: 1px solid transparent;
+            background: transparent;
             color: var(--ib-muted);
             font-weight: 650;
+            transition: background .16s ease, color .16s ease, border-color .16s ease;
+        }
+        div[data-testid="stTabs"] button:hover {
+            background: var(--ib-control-hover);
+            border-color: var(--ib-border);
+            color: var(--ib-text);
         }
         div[data-testid="stTabs"] button[aria-selected="true"] {
-            background: rgba(255,255,255,.08);
+            background: var(--ib-control);
+            border-color: var(--ib-border);
             color: var(--ib-text);
         }
         div[data-testid="stMetric"] {
@@ -671,14 +686,44 @@ def inject_css() -> None:
         }
         .stButton > button, .stDownloadButton > button {
             border-radius: 10px;
-            border: 1px solid rgba(255,255,255,.12);
+            border: 1px solid var(--ib-border);
             font-weight: 700;
+            transition: transform .12s ease, background .16s ease, border-color .16s ease, box-shadow .16s ease;
+        }
+        .stButton > button:not([kind="primary"]) {
+            background: var(--ib-control) !important;
+            color: var(--ib-text) !important;
+            border-color: var(--ib-border) !important;
+            box-shadow: none !important;
+        }
+        .stButton > button:not([kind="primary"]):hover {
+            background: var(--ib-control-hover) !important;
+            color: var(--ib-text) !important;
+            border-color: #344256 !important;
+            transform: translateY(-1px);
+        }
+        .stButton > button:not([kind="primary"]):active {
+            transform: translateY(0);
+            background: #111a27 !important;
+        }
+        .stButton > button:not([kind="primary"]) p,
+        .stButton > button:not([kind="primary"]) span {
+            color: var(--ib-text) !important;
         }
         .stButton > button[kind="primary"], .stDownloadButton > button[kind="primary"] {
             background: linear-gradient(135deg, var(--ib-blue), var(--ib-blue-2));
             border: 0;
             color: white;
             box-shadow: 0 14px 36px rgba(47,125,242,.28);
+        }
+        .stButton > button[kind="primary"]:hover,
+        .stDownloadButton > button[kind="primary"]:hover {
+            filter: brightness(1.08);
+            transform: translateY(-1px);
+        }
+        .stButton > button[kind="primary"] p,
+        .stButton > button[kind="primary"] span {
+            color: white !important;
         }
         .stDownloadButton > button {
             min-height: 2.55rem;
@@ -688,6 +733,57 @@ def inject_css() -> None:
             border-radius: 10px !important;
             color: white !important;
             box-shadow: 0 14px 36px rgba(47,125,242,.32);
+        }
+        div[data-testid="stTextInput"] input,
+        div[data-testid="stTextArea"] textarea,
+        div[data-testid="stDateInput"] input,
+        div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+            background: var(--ib-control) !important;
+            border: 1px solid var(--ib-border) !important;
+            border-radius: 10px !important;
+            color: var(--ib-text) !important;
+            box-shadow: none !important;
+        }
+        div[data-testid="stTextInput"] input:hover,
+        div[data-testid="stTextArea"] textarea:hover,
+        div[data-testid="stDateInput"] input:hover,
+        div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover {
+            border-color: #344256 !important;
+            background: var(--ib-control-hover) !important;
+        }
+        div[data-testid="stTextInput"] input:focus,
+        div[data-testid="stTextArea"] textarea:focus,
+        div[data-testid="stDateInput"] input:focus {
+            border-color: var(--ib-blue) !important;
+            box-shadow: 0 0 0 1px rgba(79,156,255,.4) !important;
+        }
+        div[data-testid="stTextInput"] input::placeholder,
+        div[data-testid="stTextArea"] textarea::placeholder {
+            color: #7f8da0 !important;
+        }
+        div[data-testid="stSelectbox"] [data-baseweb="select"] span,
+        div[data-testid="stSelectbox"] [data-baseweb="select"] svg {
+            color: var(--ib-text) !important;
+            fill: var(--ib-text) !important;
+        }
+        div[data-testid="stFileUploader"] section {
+            background: rgba(22,32,51,.72) !important;
+            border: 1px dashed #344256 !important;
+            border-radius: 12px !important;
+        }
+        div[data-testid="stFileUploader"] section:hover {
+            background: var(--ib-control-hover) !important;
+            border-color: var(--ib-blue) !important;
+        }
+        div[data-testid="stFileUploader"] section button {
+            background: var(--ib-control) !important;
+            border: 1px solid var(--ib-border) !important;
+            color: var(--ib-text) !important;
+        }
+        div[data-testid="stForm"] {
+            border-color: var(--ib-border) !important;
+            background: rgba(17,24,39,.55) !important;
+            border-radius: 14px !important;
         }
         .stDownloadButton > button p,
         .stDownloadButton > button span {
