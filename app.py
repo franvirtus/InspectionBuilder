@@ -4,6 +4,7 @@ import json
 import re
 import shutil
 import tempfile
+import inspect
 from collections import defaultdict
 from datetime import date, datetime
 from html import escape
@@ -745,6 +746,58 @@ def t(key: str) -> str:
     return TRANSLATIONS.get(language, TRANSLATIONS["Italiano"]).get(key, key)
 
 
+def width_kwargs(widget: Any, width: str = "content") -> dict[str, Any]:
+    if "width" in inspect.signature(widget).parameters:
+        return {"width": width}
+    return {"use_container_width": width == "stretch"}
+
+
+def action_marker(kind: str, key: str) -> None:
+    st.markdown(f"<span class='ib-action ib-action--{kind}' data-key='{h(key)}'></span>", unsafe_allow_html=True)
+
+
+def primary_button(label: str, key: str, *, disabled: bool = False, width: str = "content") -> bool:
+    action_marker("primary", key)
+    return st.button(label, type="primary", disabled=disabled, key=key, **width_kwargs(st.button, width))
+
+
+def secondary_button(label: str, key: str, *, disabled: bool = False, width: str = "content") -> bool:
+    action_marker("secondary", key)
+    return st.button(label, type="secondary", disabled=disabled, key=key, **width_kwargs(st.button, width))
+
+
+def danger_button(label: str, key: str, *, disabled: bool = False, width: str = "content") -> bool:
+    action_marker("danger", key)
+    return st.button(label, type="secondary", disabled=disabled, key=key, **width_kwargs(st.button, width))
+
+
+def ghost_button(label: str, key: str, *, disabled: bool = False, width: str = "content") -> bool:
+    action_marker("ghost", key)
+    return st.button(label, type="secondary", disabled=disabled, key=key, **width_kwargs(st.button, width))
+
+
+def primary_form_submit_button(label: str, *, width: str = "content") -> bool:
+    action_marker("primary", f"form-submit-{safe_slug(label)}")
+    return st.form_submit_button(label, type="primary", **width_kwargs(st.form_submit_button, width))
+
+
+def primary_download_button(label: str, data: Any, *, file_name: str, mime: str, key: str, width: str = "content") -> bool:
+    action_marker("primary", key)
+    return st.download_button(
+        label,
+        data,
+        file_name=file_name,
+        mime=mime,
+        key=key,
+        type="primary",
+        **width_kwargs(st.download_button, width),
+    )
+
+
+def ui_image(target: Any, image: Any, *, width: str = "stretch") -> None:
+    target.image(image, **width_kwargs(target.image, width))
+
+
 def inject_css() -> None:
     st.markdown(
         """
@@ -825,7 +878,7 @@ def inject_css() -> None:
             border-radius: 14px !important;
             background: rgba(27,34,45,.84);
         }
-        .stButton > button, .stDownloadButton > button {
+        .stButton > button, .stDownloadButton > button, .stFormSubmitButton > button {
             border-radius: 10px;
             border: 1px solid var(--ib-border);
             font-weight: 700;
@@ -834,7 +887,8 @@ def inject_css() -> None:
             transition: transform .12s ease, background .16s ease, border-color .16s ease, box-shadow .16s ease;
         }
         .stButton > button:focus-visible,
-        .stDownloadButton > button:focus-visible {
+        .stDownloadButton > button:focus-visible,
+        .stFormSubmitButton > button:focus-visible {
             outline: 2px solid var(--ib-focus) !important;
             outline-offset: 2px;
             box-shadow: 0 0 0 3px rgba(79,156,255,.16) !important;
@@ -859,44 +913,58 @@ def inject_css() -> None:
         .stButton > button:not([kind="primary"]) span {
             color: var(--ib-text) !important;
         }
-        div:has(> .ib-secondary-action) + div[data-testid="stButton"] button {
+        div:has(> .ib-action--secondary) + div[data-testid="stButton"] button {
             background: var(--ib-control) !important;
             border: 1px solid var(--ib-border) !important;
             color: var(--ib-text) !important;
         }
-        div:has(> .ib-secondary-action) + div[data-testid="stButton"] button:hover {
+        div:has(> .ib-action--secondary) + div[data-testid="stButton"] button:hover {
             background: var(--ib-control-hover) !important;
             border-color: #3a4a60 !important;
         }
-        div:has(> .ib-danger-action) + div[data-testid="stButton"] button {
+        div:has(> .ib-action--ghost) + div[data-testid="stButton"] button {
+            background: transparent !important;
+            border: 1px solid transparent !important;
+            color: var(--ib-muted) !important;
+            box-shadow: none !important;
+        }
+        div:has(> .ib-action--ghost) + div[data-testid="stButton"] button:hover {
+            background: rgba(255,255,255,.05) !important;
+            border-color: var(--ib-border) !important;
+            color: var(--ib-text) !important;
+        }
+        div:has(> .ib-action--danger) + div[data-testid="stButton"] button {
             background: var(--ib-danger-bg) !important;
             border: 1px solid rgba(239,68,68,.42) !important;
             color: #fecaca !important;
             box-shadow: none !important;
         }
-        div:has(> .ib-danger-action) + div[data-testid="stButton"] button:hover {
+        div:has(> .ib-action--danger) + div[data-testid="stButton"] button:hover {
             background: var(--ib-danger-hover) !important;
             border-color: rgba(239,68,68,.66) !important;
             color: #fee2e2 !important;
             transform: translateY(-1px);
         }
-        div:has(> .ib-danger-action) + div[data-testid="stButton"] button p,
-        div:has(> .ib-danger-action) + div[data-testid="stButton"] button span {
+        div:has(> .ib-action--danger) + div[data-testid="stButton"] button p,
+        div:has(> .ib-action--danger) + div[data-testid="stButton"] button span {
             color: #fecaca !important;
         }
-        .stButton > button[kind="primary"], .stDownloadButton > button[kind="primary"] {
+        .stButton > button[kind="primary"], .stDownloadButton > button[kind="primary"], .stFormSubmitButton > button[kind="primary"] {
             background: linear-gradient(135deg, var(--ib-blue), var(--ib-blue-2));
             border: 0;
             color: white;
             box-shadow: 0 14px 36px rgba(47,125,242,.28);
         }
         .stButton > button[kind="primary"]:hover,
-        .stDownloadButton > button[kind="primary"]:hover {
+        .stDownloadButton > button[kind="primary"]:hover,
+        .stFormSubmitButton > button[kind="primary"]:hover {
             filter: brightness(1.08);
             transform: translateY(-1px);
         }
         .stButton > button[kind="primary"] p,
-        .stButton > button[kind="primary"] span {
+        .stButton > button[kind="primary"] span,
+        .stFormSubmitButton > button[kind="primary"] p,
+        .stFormSubmitButton > button[kind="primary"] span {
             color: white !important;
         }
         .stDownloadButton > button {
@@ -1126,7 +1194,7 @@ def render_sidebar_summary(
         """,
         unsafe_allow_html=True,
     )
-    st.sidebar.image(cover_photo if cover_photo else str(INSPECTION_ASSETS_DIR / "cover-home.png"), use_container_width=True)
+    ui_image(st.sidebar, cover_photo if cover_photo else str(INSPECTION_ASSETS_DIR / "cover-home.png"), width="stretch")
     st.sidebar.markdown("<div class='ib-section-label'>Report Details</div>", unsafe_allow_html=True)
     for label, value in [
         ("Client", client_name),
@@ -1222,14 +1290,13 @@ def render_generate_result(context_key: str) -> None:
             with pdf_path.open("rb") as pdf_file:
                 download_col, _ = st.columns([0.24, 0.76])
                 with download_col:
-                    st.download_button(
+                    primary_download_button(
                         t("download_pdf"),
                         pdf_file,
                         file_name=pdf_path.name,
                         mime="application/pdf",
-                        type="primary",
-                        use_container_width=True,
                         key=f"download_pdf_{context_key}_{safe_report_id}",
+                        width="stretch",
                     )
 
 
@@ -1325,7 +1392,7 @@ def render_dashboard(property_address: str) -> None:
     for display_index, (original_index, finding) in enumerate(visible, start=1):
         with st.container(border=True):
             image_col, body_col, action_col = st.columns([0.22, 0.66, 0.12], vertical_alignment="center")
-            image_col.image(first_photo_for_finding(finding), use_container_width=True)
+            ui_image(image_col, first_photo_for_finding(finding), width="stretch")
             body_col.markdown(
                 f"""
                 {severity_badge(finding.get("severity", "Informational"))}
@@ -1337,8 +1404,9 @@ def render_dashboard(property_address: str) -> None:
                 unsafe_allow_html=True,
             )
             remove_key = f"remove_dashboard_{display_index}_{original_index}_{safe_slug(finding.get('title', 'finding'))}"
-            action_col.markdown("<span class='ib-danger-action'></span>", unsafe_allow_html=True)
-            if action_col.button(t("remove"), key=remove_key):
+            with action_col:
+                remove_clicked = danger_button(t("remove"), key=remove_key, width="stretch")
+            if remove_clicked:
                 st.session_state["findings"].pop(original_index)
                 st.rerun()
 
@@ -1374,8 +1442,7 @@ def render_add_finding(defects: list[dict[str, Any]]) -> None:
                     """,
                     unsafe_allow_html=True,
                 )
-                st.markdown("<span class='ib-secondary-action'></span>", unsafe_allow_html=True)
-                if st.button(t("use_this_defect"), key=f"use-{defect['id']}"):
+                if secondary_button(t("use_this_defect"), key=f"use_defect_{defect['id']}"):
                     st.session_state["category"] = defect["category"]
                     st.session_state["severity"] = defect["severity"]
                     st.session_state["title"] = defect["title"]
@@ -1387,7 +1454,7 @@ def render_add_finding(defects: list[dict[str, Any]]) -> None:
 
     with form_col:
         st.markdown(f"### {t('finding_editor')}")
-        st.image(asset_for_category(st.session_state["category"]), use_container_width=True)
+        ui_image(st, asset_for_category(st.session_state["category"]), width="stretch")
         with st.form("finding_form", clear_on_submit=False):
             st.caption(t("current_finding"))
             category = st.selectbox(t("category"), SECTIONS, key="category")
@@ -1398,7 +1465,7 @@ def render_add_finding(defects: list[dict[str, Any]]) -> None:
             recommendation = st.text_area(t("recommendation"), key="recommendation", height=105)
             submit_col, _ = st.columns([0.48, 0.52])
             with submit_col:
-                submitted = st.form_submit_button(t("add_to_report"), type="primary", use_container_width=True)
+                submitted = primary_form_submit_button(t("add_to_report"), width="stretch")
             st.caption(t("optional_details"))
             notes = st.text_area(t("notes_optional"), key="notes", height=80)
             photos = st.file_uploader(
@@ -1432,8 +1499,9 @@ def render_add_finding(defects: list[dict[str, Any]]) -> None:
                 unsafe_allow_html=True,
             )
             remove_key = f"remove_added_{display_index}_{original_index}_{safe_slug(finding.get('title', 'finding'))}"
-            remove_col.markdown("<span class='ib-danger-action'></span>", unsafe_allow_html=True)
-            if remove_col.button(t("remove"), key=remove_key):
+            with remove_col:
+                remove_clicked = danger_button(t("remove"), key=remove_key, width="stretch")
+            if remove_clicked:
                 st.session_state["findings"].pop(original_index)
                 st.rerun()
 
@@ -1605,13 +1673,14 @@ def main() -> None:
 
     header_left, header_right = st.columns([0.72, 0.28], vertical_alignment="center")
     header_left.markdown("<div class='ib-kicker'>Modern Premium SaaS</div><h1 class='ib-title'>InspectionBuilder</h1>", unsafe_allow_html=True)
-    if header_right.button(
-        t("generate_pdf"),
-        type="primary",
-        disabled=generate_disabled,
-        use_container_width=True,
-        key="generate_pdf_main",
-    ):
+    with header_right:
+        generate_main_clicked = primary_button(
+            t("generate_pdf"),
+            key="generate_pdf_main",
+            disabled=generate_disabled,
+            width="stretch",
+        )
+    if generate_main_clicked:
         persist_and_generate_report(report_meta.copy(), st.session_state["findings"], company_logo, cover_photo)
     render_generate_result("main")
 
@@ -1628,7 +1697,7 @@ def main() -> None:
     with pdf_tab:
         render_pdf_preview(client_name, property_address, inspection_date, inspector_name, company_name)
         st.divider()
-        if st.button(t("generate_pdf"), type="primary", disabled=generate_disabled, key="generate_pdf_preview"):
+        if primary_button(t("generate_pdf"), key="generate_pdf_preview", disabled=generate_disabled):
             persist_and_generate_report(report_meta.copy(), st.session_state["findings"], company_logo, cover_photo)
         render_generate_result("preview")
 
