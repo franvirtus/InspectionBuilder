@@ -1,2 +1,42 @@
+# Next.js
+.next/
+next-env.d.ts
+tsconfig.tsbuildinfo
 
+# Dependencies
+node_modules/
+
+# Vercel
+.vercel/
+
+# Environment variables
+.env*.local
+
+# Python / Streamlit
 .venv/
+__pycache__/
+*.py[cod]
+data/reports/
+exports/
+tmp/
+
+# v0 sandbox internal files
+__v0_runtime_loader.js
+__v0_devtools.tsx
+__v0_jsx-dev-runtime.ts
+.snowflake/
+.v0-trash/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Screenshots from v0 export (not needed in repo)
+add-finding.png
+dashboard.png
+mobile-editor.png
+pdf.png
+summary.png
+switcher-open.png
+theme-conservative.png
+theme-rugged.png
