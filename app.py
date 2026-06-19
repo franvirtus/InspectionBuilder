@@ -680,6 +680,18 @@ def inject_css() -> None:
             color: white;
             box-shadow: 0 14px 36px rgba(47,125,242,.28);
         }
+        .stDownloadButton > button {
+            min-height: 2.75rem;
+            background: linear-gradient(135deg, var(--ib-blue), var(--ib-blue-2)) !important;
+            border: 0 !important;
+            color: white !important;
+            box-shadow: 0 14px 36px rgba(47,125,242,.32);
+        }
+        .stDownloadButton > button p,
+        .stDownloadButton > button span {
+            color: white !important;
+            font-weight: 800;
+        }
         .ib-kicker { color: var(--ib-blue); font-size: .9rem; font-weight: 800; margin-bottom: .25rem; }
         .ib-title { font-size: 2rem; line-height: 1.1; font-weight: 800; color: var(--ib-text); margin: 0; }
         .ib-muted { color: var(--ib-muted); }
@@ -917,11 +929,9 @@ def persist_and_generate_report(
 def render_generate_result(context_key: str) -> None:
     if st.session_state["last_pdf_path"]:
         pdf_path = Path(st.session_state["last_pdf_path"])
-        json_path = Path(st.session_state["last_json_path"])
         safe_report_id = slugify(pdf_path.stem)
-        st.success("Report saved and PDF generated.")
-        st.write(f"JSON: `{json_path}`")
-        st.write(f"PDF: `{pdf_path}`")
+        st.success("Report generated successfully")
+        st.caption("Your PDF is ready.")
         if pdf_path.exists():
             with pdf_path.open("rb") as pdf_file:
                 st.download_button(
@@ -929,6 +939,8 @@ def render_generate_result(context_key: str) -> None:
                     pdf_file,
                     file_name=pdf_path.name,
                     mime="application/pdf",
+                    type="primary",
+                    use_container_width=True,
                     key=f"download_pdf_{context_key}_{safe_report_id}",
                 )
 
@@ -1268,7 +1280,13 @@ def main() -> None:
 
     header_left, header_right = st.columns([0.72, 0.28], vertical_alignment="center")
     header_left.markdown("<div class='ib-kicker'>Modern Premium SaaS</div><h1 class='ib-title'>InspectionBuilder</h1>", unsafe_allow_html=True)
-    if header_right.button("Generate PDF", type="primary", disabled=generate_disabled, use_container_width=True):
+    if header_right.button(
+        "Generate PDF",
+        type="primary",
+        disabled=generate_disabled,
+        use_container_width=True,
+        key="generate_pdf_main",
+    ):
         persist_and_generate_report(report_meta.copy(), st.session_state["findings"], company_logo, cover_photo)
     render_generate_result("main")
 
@@ -1283,7 +1301,7 @@ def main() -> None:
     with pdf_tab:
         render_pdf_preview(client_name, property_address, inspection_date, inspector_name, company_name)
         st.divider()
-        if st.button("Save report and generate PDF", type="primary", disabled=generate_disabled):
+        if st.button("Generate PDF", type="primary", disabled=generate_disabled, key="generate_pdf_preview"):
             persist_and_generate_report(report_meta.copy(), st.session_state["findings"], company_logo, cover_photo)
         render_generate_result("preview")
 
