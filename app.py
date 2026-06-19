@@ -914,16 +914,23 @@ def persist_and_generate_report(
     return json_path, pdf_path
 
 
-def render_generate_result() -> None:
+def render_generate_result(context_key: str) -> None:
     if st.session_state["last_pdf_path"]:
         pdf_path = Path(st.session_state["last_pdf_path"])
         json_path = Path(st.session_state["last_json_path"])
+        safe_report_id = slugify(pdf_path.stem)
         st.success("Report saved and PDF generated.")
         st.write(f"JSON: `{json_path}`")
         st.write(f"PDF: `{pdf_path}`")
         if pdf_path.exists():
             with pdf_path.open("rb") as pdf_file:
-                st.download_button("Download PDF", pdf_file, file_name=pdf_path.name, mime="application/pdf")
+                st.download_button(
+                    "Download PDF",
+                    pdf_file,
+                    file_name=pdf_path.name,
+                    mime="application/pdf",
+                    key=f"download_pdf_{context_key}_{safe_report_id}",
+                )
 
 
 def add_finding_from_form(photos: list[Any] | None, category: str, severity: str, title: str, location: str, observation: str, recommendation: str, notes: str) -> None:
@@ -1263,7 +1270,7 @@ def main() -> None:
     header_left.markdown("<div class='ib-kicker'>Modern Premium SaaS</div><h1 class='ib-title'>InspectionBuilder</h1>", unsafe_allow_html=True)
     if header_right.button("Generate PDF", type="primary", disabled=generate_disabled, use_container_width=True):
         persist_and_generate_report(report_meta.copy(), st.session_state["findings"], company_logo, cover_photo)
-    render_generate_result()
+    render_generate_result("main")
 
     defects = load_defect_library()
     dashboard_tab, add_tab, summary_tab, pdf_tab = st.tabs(["Dashboard", "Add Finding", "Summary", "PDF Preview"])
@@ -1278,7 +1285,7 @@ def main() -> None:
         st.divider()
         if st.button("Save report and generate PDF", type="primary", disabled=generate_disabled):
             persist_and_generate_report(report_meta.copy(), st.session_state["findings"], company_logo, cover_photo)
-        render_generate_result()
+        render_generate_result("preview")
 
 
 if __name__ == "__main__":
