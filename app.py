@@ -78,6 +78,77 @@ CATEGORY_ASSETS = {
     "Safety": "defect-electrical.png",
 }
 
+TRANSLATIONS = {
+    "Italiano": {
+        "language": "Lingua",
+        "dashboard": "Dashboard",
+        "add_finding": "Aggiungi difetto",
+        "summary": "Riepilogo",
+        "pdf_preview": "Anteprima PDF",
+        "generate_pdf": "Genera PDF",
+        "download_pdf": "Scarica PDF",
+        "defect_library": "Libreria difetti",
+        "finding_editor": "Editor difetto",
+        "search_defect_templates": "Cerca modelli difetto",
+        "category": "Categoria",
+        "severity": "Gravita",
+        "defect_title": "Titolo difetto",
+        "location": "Posizione",
+        "observation": "Osservazione",
+        "recommendation": "Raccomandazione",
+        "notes_optional": "Note opzionali",
+        "photos_optional": "Foto opzionali",
+        "use_this_defect": "Usa questo difetto",
+        "save_finding": "Aggiungi al report",
+        "add_to_report": "Aggiungi al report",
+        "report_generated": "Report generato correttamente",
+        "pdf_ready": "Il PDF e pronto.",
+        "finding_added": "Difetto aggiunto al report",
+        "findings_already_added": "Difetti gia aggiunti",
+        "remove": "Rimuovi",
+        "search_findings": "Cerca per titolo, categoria, posizione...",
+        "no_findings": "Nessun difetto aggiunto. Scegli un modello dalla libreria per iniziare.",
+        "required_fields": "Titolo, osservazione e raccomandazione sono obbligatori.",
+        "template_hint": "Scegli un modello per precompilare il difetto, poi adattalo alla proprieta.",
+        "current_finding": "Difetto corrente",
+        "optional_details": "Dettagli opzionali",
+    },
+    "English": {
+        "language": "Language",
+        "dashboard": "Dashboard",
+        "add_finding": "Add Finding",
+        "summary": "Summary",
+        "pdf_preview": "PDF Preview",
+        "generate_pdf": "Generate PDF",
+        "download_pdf": "Download PDF",
+        "defect_library": "Defect Library",
+        "finding_editor": "Finding Editor",
+        "search_defect_templates": "Search defect templates",
+        "category": "Category",
+        "severity": "Severity",
+        "defect_title": "Defect title",
+        "location": "Location",
+        "observation": "Observation",
+        "recommendation": "Recommendation",
+        "notes_optional": "Notes optional",
+        "photos_optional": "Photos optional",
+        "use_this_defect": "Use this defect",
+        "save_finding": "Add to report",
+        "add_to_report": "Add to report",
+        "report_generated": "Report generated successfully",
+        "pdf_ready": "Your PDF is ready.",
+        "finding_added": "Finding added to report",
+        "findings_already_added": "Findings already added",
+        "remove": "Remove",
+        "search_findings": "Search by title, category, location...",
+        "no_findings": "No findings yet. Add one from the defect library to start shaping the report.",
+        "required_fields": "Title, observation, and recommendation are required.",
+        "template_hint": "Pick a template to pre-fill the finding, then refine it for the property.",
+        "current_finding": "Current finding",
+        "optional_details": "Optional details",
+    },
+}
+
 
 def ensure_directories() -> None:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -600,6 +671,7 @@ def generate_pdf(payload: dict[str, Any]) -> Path:
 
 
 def initialize_state() -> None:
+    st.session_state.setdefault("language", "Italiano")
     st.session_state.setdefault("findings", [])
     st.session_state.setdefault("category", "Roof")
     st.session_state.setdefault("severity", "Moderate")
@@ -610,6 +682,11 @@ def initialize_state() -> None:
     st.session_state.setdefault("notes", "")
     st.session_state.setdefault("last_json_path", "")
     st.session_state.setdefault("last_pdf_path", "")
+
+
+def t(key: str) -> str:
+    language = st.session_state.get("language", "Italiano")
+    return TRANSLATIONS.get(language, TRANSLATIONS["Italiano"]).get(key, key)
 
 
 def inject_css() -> None:
@@ -789,6 +866,10 @@ def inject_css() -> None:
         .stDownloadButton > button span {
             color: white !important;
             font-weight: 800;
+        }
+        div[data-testid="stForm"] .stButton > button[kind="primary"] {
+            min-height: 2.85rem;
+            font-size: .98rem;
         }
         .ib-kicker { color: var(--ib-blue); font-size: .9rem; font-weight: 800; margin-bottom: .25rem; }
         .ib-title { font-size: 2rem; line-height: 1.1; font-weight: 800; color: var(--ib-text); margin: 0; }
@@ -1028,14 +1109,14 @@ def render_generate_result(context_key: str) -> None:
     if st.session_state["last_pdf_path"]:
         pdf_path = Path(st.session_state["last_pdf_path"])
         safe_report_id = slugify(pdf_path.stem)
-        st.success("Report generated successfully")
-        st.caption("Your PDF is ready.")
+        st.success(t("report_generated"))
+        st.caption(t("pdf_ready"))
         if pdf_path.exists():
             with pdf_path.open("rb") as pdf_file:
                 download_col, _ = st.columns([0.24, 0.76])
                 with download_col:
                     st.download_button(
-                        "Download PDF",
+                        t("download_pdf"),
                         pdf_file,
                         file_name=pdf_path.name,
                         mime="application/pdf",
@@ -1113,7 +1194,7 @@ def render_dashboard(property_address: str) -> None:
     )
 
     st.markdown("### Findings")
-    search = st.text_input("Search findings", placeholder="Search by title, category, location...", label_visibility="collapsed")
+    search = st.text_input("Search findings", placeholder=t("search_findings"), label_visibility="collapsed")
     visible = [
         finding
         for finding in findings
@@ -1131,7 +1212,7 @@ def render_dashboard(property_address: str) -> None:
     ]
 
     if not visible:
-        st.info("No findings yet. Add one from the defect library to start shaping the report.")
+        st.info(t("no_findings"))
         return
 
     for index, finding in enumerate(visible):
@@ -1149,20 +1230,20 @@ def render_dashboard(property_address: str) -> None:
                 unsafe_allow_html=True,
             )
             original_index = st.session_state["findings"].index(finding)
-            if action_col.button("Remove", key=f"remove-dashboard-{original_index}"):
+            if action_col.button(t("remove"), key=f"remove-dashboard-{original_index}"):
                 st.session_state["findings"].pop(original_index)
                 st.rerun()
 
 
 def render_add_finding(defects: list[dict[str, Any]]) -> None:
-    st.markdown("<div class='ib-kicker'>Add Finding</div>", unsafe_allow_html=True)
-    st.markdown("<h1 class='ib-title'>Defect Library</h1>", unsafe_allow_html=True)
-    st.markdown("<div class='ib-muted'>Pick a template to pre-fill the finding, then refine it for the property.</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='ib-kicker'>{t('add_finding')}</div>", unsafe_allow_html=True)
+    st.markdown(f"<h1 class='ib-title'>{t('defect_library')}</h1>", unsafe_allow_html=True)
+    st.markdown(f"<div class='ib-muted'>{t('template_hint')}</div>", unsafe_allow_html=True)
 
     library_col, form_col = st.columns([1.1, 1], gap="large")
     with library_col:
-        search = st.text_input("Search defect templates", placeholder="Try: roof, GFCI, leak, smoke...")
-        selected_category = st.selectbox("Filter category", ["All", *SECTIONS], index=0)
+        search = st.text_input(t("search_defect_templates"), placeholder="roof, GFCI, leak, smoke...")
+        selected_category = st.selectbox(t("category"), ["All", *SECTIONS], index=0)
         filtered_defects = [
             defect
             for defect in defects
@@ -1185,7 +1266,7 @@ def render_add_finding(defects: list[dict[str, Any]]) -> None:
                     """,
                     unsafe_allow_html=True,
                 )
-                if st.button("Use this defect", key=f"use-{defect['id']}"):
+                if st.button(t("use_this_defect"), key=f"use-{defect['id']}"):
                     st.session_state["category"] = defect["category"]
                     st.session_state["severity"] = defect["severity"]
                     st.session_state["title"] = defect["title"]
@@ -1196,31 +1277,53 @@ def render_add_finding(defects: list[dict[str, Any]]) -> None:
                     st.rerun()
 
     with form_col:
-        st.markdown("### Finding Editor")
+        st.markdown(f"### {t('finding_editor')}")
         st.image(asset_for_category(st.session_state["category"]), use_container_width=True)
         with st.form("finding_form", clear_on_submit=False):
-            category = st.selectbox("Category", SECTIONS, key="category")
-            severity = st.selectbox("Severity", SEVERITIES, key="severity")
-            title = st.text_input("Defect title", key="title")
-            location = st.text_input("Location", placeholder="e.g. Roof - South slope", key="location")
-            observation = st.text_area("Observation", key="observation", height=120)
-            recommendation = st.text_area("Recommendation", key="recommendation", height=105)
-            notes = st.text_area("Notes optional", key="notes", height=80)
+            st.caption(t("current_finding"))
+            category = st.selectbox(t("category"), SECTIONS, key="category")
+            severity = st.selectbox(t("severity"), SEVERITIES, key="severity")
+            title = st.text_input(t("defect_title"), key="title")
+            location = st.text_input(t("location"), placeholder="e.g. Roof - South slope", key="location")
+            observation = st.text_area(t("observation"), key="observation", height=120)
+            recommendation = st.text_area(t("recommendation"), key="recommendation", height=105)
+            submit_col, _ = st.columns([0.48, 0.52])
+            with submit_col:
+                submitted = st.form_submit_button(t("add_to_report"), type="primary", use_container_width=True)
+            st.caption(t("optional_details"))
+            notes = st.text_area(t("notes_optional"), key="notes", height=80)
             photos = st.file_uploader(
-                "Photos optional",
+                t("photos_optional"),
                 type=["png", "jpg", "jpeg"],
                 accept_multiple_files=True,
                 key="finding_photos",
             )
 
-            submitted = st.form_submit_button("Save Finding", type="primary", use_container_width=True)
             if submitted:
                 if not title or not observation or not recommendation:
-                    st.error("Title, observation, and recommendation are required.")
+                    st.error(t("required_fields"))
                 else:
                     add_finding_from_form(photos, category, severity, title, location, observation, recommendation, notes)
-                    st.success("Finding added.")
-                    st.rerun()
+                    st.toast(t("finding_added"))
+                    st.success(t("finding_added"))
+
+    st.markdown(f"### {t('findings_already_added')}")
+    if not st.session_state["findings"]:
+        st.info(t("no_findings"))
+    for index, finding in enumerate(st.session_state["findings"], start=1):
+        with st.container(border=True):
+            title_col, remove_col = st.columns([0.82, 0.18], vertical_alignment="center")
+            title_col.markdown(
+                f"""
+                {severity_badge(finding.get("severity", "Informational"))}
+                <span class="ib-muted" style="font-size:.78rem;margin-left:.5rem;">{h(finding.get("category"))}</span>
+                <div class="ib-finding-title">{index}. {h(finding.get("title"))}</div>
+                """,
+                unsafe_allow_html=True,
+            )
+            if remove_col.button(t("remove"), key=f"remove-add-{index}"):
+                st.session_state["findings"].pop(index - 1)
+                st.rerun()
 
 
 def render_summary(property_address: str, inspector_name: str, company_name: str) -> None:
@@ -1228,8 +1331,8 @@ def render_summary(property_address: str, inspector_name: str, company_name: str
     counts = severity_counts(findings)
     priority = [finding for severity in SEVERITIES for finding in findings if finding.get("severity") == severity]
 
-    st.markdown("<div class='ib-kicker'>Executive Summary</div>", unsafe_allow_html=True)
-    st.markdown("<h1 class='ib-title'>Summary of Inspection Findings</h1>", unsafe_allow_html=True)
+    st.markdown(f"<div class='ib-kicker'>{t('summary')}</div>", unsafe_allow_html=True)
+    st.markdown(f"<h1 class='ib-title'>{t('summary')}</h1>", unsafe_allow_html=True)
     st.markdown(
         f"<p class='ib-muted'>This summary highlights the most significant items discovered during the inspection of {h(property_address)}. It should be read together with the detailed findings and photographs.</p>",
         unsafe_allow_html=True,
@@ -1286,7 +1389,7 @@ def render_pdf_preview(client_name: str, property_address: str, inspection_date:
     findings = st.session_state["findings"]
     counts = severity_counts(findings)
 
-    st.markdown("<div class='ib-kicker'>PDF Preview</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='ib-kicker'>{t('pdf_preview')}</div>", unsafe_allow_html=True)
     st.markdown("<h1 class='ib-title'>Report Pages</h1>", unsafe_allow_html=True)
     st.markdown("<div class='ib-muted'>Visual approximation of the generated report structure.</div>", unsafe_allow_html=True)
 
@@ -1355,6 +1458,7 @@ def main() -> None:
     inject_css()
 
     with st.sidebar:
+        st.selectbox(t("language"), ["Italiano", "English"], key="language")
         client_name = st.text_input("Client name", value="John Smith")
         property_address = st.text_area("Property address", value="123 Main St, Austin, TX")
         inspection_date = st.date_input("Inspection date", value=date.today())
@@ -1381,7 +1485,7 @@ def main() -> None:
     header_left, header_right = st.columns([0.72, 0.28], vertical_alignment="center")
     header_left.markdown("<div class='ib-kicker'>Modern Premium SaaS</div><h1 class='ib-title'>InspectionBuilder</h1>", unsafe_allow_html=True)
     if header_right.button(
-        "Generate PDF",
+        t("generate_pdf"),
         type="primary",
         disabled=generate_disabled,
         use_container_width=True,
@@ -1391,7 +1495,9 @@ def main() -> None:
     render_generate_result("main")
 
     defects = load_defect_library()
-    dashboard_tab, add_tab, summary_tab, pdf_tab = st.tabs(["Dashboard", "Add Finding", "Summary", "PDF Preview"])
+    dashboard_tab, add_tab, summary_tab, pdf_tab = st.tabs(
+        [t("dashboard"), t("add_finding"), t("summary"), t("pdf_preview")]
+    )
     with dashboard_tab:
         render_dashboard(property_address)
     with add_tab:
@@ -1401,7 +1507,7 @@ def main() -> None:
     with pdf_tab:
         render_pdf_preview(client_name, property_address, inspection_date, inspector_name, company_name)
         st.divider()
-        if st.button("Generate PDF", type="primary", disabled=generate_disabled, key="generate_pdf_preview"):
+        if st.button(t("generate_pdf"), type="primary", disabled=generate_disabled, key="generate_pdf_preview"):
             persist_and_generate_report(report_meta.copy(), st.session_state["findings"], company_logo, cover_photo)
         render_generate_result("preview")
 
