@@ -13,12 +13,13 @@ from typing import Any
 import streamlit as st
 from PIL import Image
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import (
     Image as ReportImage,
+    KeepTogether,
     PageBreak,
     Paragraph,
     SimpleDocTemplate,
@@ -126,6 +127,49 @@ def pdf_text(value: Any) -> str:
     return escape(str(value or ""))
 
 
+def pdf_date(value: Any) -> str:
+    if isinstance(value, date):
+        return value.strftime("%B %d, %Y")
+    text = str(value or "")
+    try:
+        return datetime.fromisoformat(text).strftime("%B %d, %Y")
+    except ValueError:
+        return text
+
+
+def pdf_footer(canvas: Any, doc: Any, report: dict[str, Any]) -> None:
+    canvas.saveState()
+    width, _ = letter
+    y = 0.42 * inch
+    canvas.setStrokeColor(colors.HexColor("#d8dee8"))
+    canvas.setLineWidth(0.4)
+    canvas.line(doc.leftMargin, y + 0.16 * inch, width - doc.rightMargin, y + 0.16 * inch)
+    canvas.setFillColor(colors.HexColor("#667085"))
+    canvas.setFont("Helvetica", 7.5)
+    canvas.drawString(doc.leftMargin, y, str(report.get("company_name") or "InspectionBuilder"))
+    canvas.drawCentredString(width / 2, y, str(report.get("property_address") or "Inspection Report")[:84])
+    canvas.drawRightString(width - doc.rightMargin, y, f"Page {canvas.getPageNumber()}")
+    canvas.restoreState()
+
+
+def pdf_badge(text: str, severity: str, styles: Any) -> Table:
+    color = SEVERITY_COLORS.get(severity, SEVERITY_COLORS["Informational"])
+    badge = Table([[Paragraph(pdf_text(text), styles["Badge"])]], colWidths=[1.08 * inch])
+    badge.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), color),
+                ("TEXTCOLOR", (0, 0), (-1, -1), colors.white),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ]
+        )
+    )
+    return badge
+
+
 def build_report_payload(report_meta: dict[str, Any], findings: list[dict[str, Any]]) -> dict[str, Any]:
     report_id = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{slugify(report_meta['client_name'])}"
     return {
@@ -152,50 +196,267 @@ def generate_pdf(payload: dict[str, Any]) -> Path:
     doc = SimpleDocTemplate(
         str(output_path),
         pagesize=letter,
-        rightMargin=0.65 * inch,
-        leftMargin=0.65 * inch,
-        topMargin=0.65 * inch,
-        bottomMargin=0.65 * inch,
+        rightMargin=0.58 * inch,
+        leftMargin=0.58 * inch,
+        topMargin=0.58 * inch,
+        bottomMargin=0.72 * inch,
     )
     styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name="CoverTitle", parent=styles["Title"], fontSize=28, leading=34, alignment=TA_CENTER))
-    styles.add(ParagraphStyle(name="SectionTitle", parent=styles["Heading2"], spaceBefore=18, spaceAfter=8))
-    styles.add(ParagraphStyle(name="SmallMuted", parent=styles["Normal"], textColor=colors.HexColor("#52606d"), fontSize=9))
+    navy = colors.HexColor("#111827")
+    slate = colors.HexColor("#475467")
+    muted = colors.HexColor("#667085")
+    border = colors.HexColor("#e4e7ec")
+    paper = colors.HexColor("#f7f9fc")
+    blue = colors.HexColor("#2f7df2")
+    styles.add(
+        ParagraphStyle(
+            name="CoverEyebrow",
+            parent=styles["Normal"],
+            fontName="Helvetica-Bold",
+            fontSize=8,
+            leading=10,
+            textColor=colors.HexColor("#b9d4ff"),
+            uppercase=True,
+            alignment=TA_LEFT,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            name="CoverTitle",
+            parent=styles["Title"],
+            fontName="Helvetica-Bold",
+            fontSize=30,
+            leading=34,
+            textColor=colors.white,
+            alignment=TA_LEFT,
+            spaceAfter=8,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            name="CoverSub",
+            parent=styles["Normal"],
+            fontSize=11,
+            leading=15,
+            textColor=colors.HexColor("#d8e6ff"),
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            name="SectionTitle",
+            parent=styles["Heading2"],
+            fontName="Helvetica-Bold",
+            fontSize=17,
+            leading=21,
+            textColor=navy,
+            spaceBefore=14,
+            spaceAfter=8,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            name="FindingTitle",
+            parent=styles["Heading3"],
+            fontName="Helvetica-Bold",
+            fontSize=14,
+            leading=17,
+            textColor=navy,
+            spaceAfter=4,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            name="SmallMuted",
+            parent=styles["Normal"],
+            textColor=muted,
+            fontSize=8.5,
+            leading=11,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            name="Body",
+            parent=styles["Normal"],
+            textColor=colors.HexColor("#344054"),
+            fontSize=9.5,
+            leading=13.5,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            name="Label",
+            parent=styles["Normal"],
+            fontName="Helvetica-Bold",
+            textColor=muted,
+            fontSize=7.5,
+            leading=9,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            name="MetaValue",
+            parent=styles["Normal"],
+            fontName="Helvetica-Bold",
+            textColor=navy,
+            fontSize=9.5,
+            leading=12,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            name="Badge",
+            parent=styles["Normal"],
+            fontName="Helvetica-Bold",
+            textColor=colors.white,
+            fontSize=7.5,
+            leading=9,
+            alignment=TA_CENTER,
+        )
+    )
+    styles.add(
+        ParagraphStyle(
+            name="FooterNote",
+            parent=styles["Normal"],
+            textColor=slate,
+            fontSize=9,
+            leading=13,
+        )
+    )
 
     story: list[Any] = []
 
-    logo = report.get("company_logo_path") or str(ASSETS_DIR / "logo_placeholder.png")
-    logo_image = image_flowable(logo, max_width=2.2 * inch, max_height=0.9 * inch)
-    if logo_image:
-        story.append(logo_image)
-        story.append(Spacer(1, 0.4 * inch))
+    findings_by_severity: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for finding in findings:
+        findings_by_severity[finding["severity"]].append(finding)
 
-    story.append(Paragraph("Home Inspection Report", styles["CoverTitle"]))
-    story.append(Spacer(1, 0.25 * inch))
-    story.append(Paragraph(pdf_text(report["property_address"]), styles["Heading2"]))
-    story.append(Paragraph(f"Client: {pdf_text(report['client_name'])}", styles["Normal"]))
-    story.append(Paragraph(f"Inspection Date: {pdf_text(report['inspection_date'])}", styles["Normal"]))
-    story.append(Paragraph(f"Inspector: {pdf_text(report['inspector_name'])}", styles["Normal"]))
-    story.append(Paragraph(f"Company: {pdf_text(report['company_name'])}", styles["Normal"]))
-    story.append(Spacer(1, 0.35 * inch))
-
+    finding_count = len(findings)
     cover_photo = report.get("cover_photo_path")
-    cover_image = image_flowable(cover_photo, max_width=6.6 * inch, max_height=3.7 * inch) if cover_photo else None
+    if not cover_photo and (INSPECTION_ASSETS_DIR / "cover-home.png").exists():
+        cover_photo = str(INSPECTION_ASSETS_DIR / "cover-home.png")
+
+    logo = report.get("company_logo_path") or str(ASSETS_DIR / "logo_placeholder.png")
+    logo_image = image_flowable(logo, max_width=1.65 * inch, max_height=0.58 * inch)
+    brand_cell = logo_image if logo_image else Paragraph(pdf_text(report["company_name"]), styles["CoverSub"])
+
+    cover_rows = [
+        [brand_cell, Paragraph(pdf_text(report["company_name"]), styles["CoverSub"])],
+        [
+            Paragraph("HOME INSPECTION REPORT", styles["CoverEyebrow"]),
+            Paragraph(f"{finding_count} documented findings", styles["CoverSub"]),
+        ],
+        [Paragraph(pdf_text(report["property_address"]), styles["CoverTitle"]), ""],
+        [
+            Paragraph(
+                f"Prepared for {pdf_text(report['client_name'])}<br/>Inspection date: {pdf_text(pdf_date(report['inspection_date']))}",
+                styles["CoverSub"],
+            ),
+            Paragraph(
+                f"Inspector: {pdf_text(report['inspector_name'])}<br/>Company: {pdf_text(report['company_name'])}",
+                styles["CoverSub"],
+            ),
+        ],
+    ]
+    cover_table = Table(cover_rows, colWidths=[4.25 * inch, 2.3 * inch])
+    cover_table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), navy),
+                ("SPAN", (0, 2), (-1, 2)),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("ALIGN", (1, 0), (1, 1), "RIGHT"),
+                ("TEXTCOLOR", (0, 0), (-1, -1), colors.white),
+                ("LEFTPADDING", (0, 0), (-1, -1), 20),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 20),
+                ("TOPPADDING", (0, 0), (-1, 0), 18),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 18),
+                ("TOPPADDING", (0, 1), (-1, 1), 18),
+                ("BOTTOMPADDING", (0, 1), (-1, 1), 4),
+                ("TOPPADDING", (0, 2), (-1, 2), 6),
+                ("BOTTOMPADDING", (0, 2), (-1, 2), 16),
+                ("TOPPADDING", (0, 3), (-1, 3), 8),
+                ("BOTTOMPADDING", (0, 3), (-1, 3), 22),
+            ]
+        )
+    )
+    story.append(cover_table)
+    story.append(Spacer(1, 0.18 * inch))
+
+    cover_image = image_flowable(cover_photo, max_width=6.85 * inch, max_height=3.65 * inch) if cover_photo else None
     if cover_image:
         story.append(cover_image)
+        story.append(Spacer(1, 0.22 * inch))
 
+    meta_rows = [
+        [
+            Paragraph("CLIENT", styles["Label"]),
+            Paragraph("PROPERTY ADDRESS", styles["Label"]),
+            Paragraph("INSPECTION DATE", styles["Label"]),
+            Paragraph("INSPECTOR", styles["Label"]),
+        ],
+        [
+            Paragraph(pdf_text(report["client_name"]), styles["MetaValue"]),
+            Paragraph(pdf_text(report["property_address"]), styles["MetaValue"]),
+            Paragraph(pdf_text(pdf_date(report["inspection_date"])), styles["MetaValue"]),
+            Paragraph(pdf_text(report["inspector_name"]), styles["MetaValue"]),
+        ],
+    ]
+    meta_table = Table(meta_rows, colWidths=[1.45 * inch, 2.2 * inch, 1.3 * inch, 1.6 * inch])
+    meta_table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), paper),
+                ("BOX", (0, 0), (-1, -1), 0.5, border),
+                ("INNERGRID", (0, 0), (-1, -1), 0.35, border),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("TOPPADDING", (0, 0), (-1, -1), 8),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+                ("LEFTPADDING", (0, 0), (-1, -1), 9),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 9),
+            ]
+        )
+    )
+    story.append(meta_table)
     story.append(PageBreak())
-    story.append(Paragraph("Executive Summary", styles["SectionTitle"]))
-    story.append(Paragraph("Findings grouped by severity.", styles["SmallMuted"]))
 
-    by_severity: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for finding in findings:
-        by_severity[finding["severity"]].append(finding)
+    story.append(Paragraph("Executive Summary", styles["SectionTitle"]))
+    story.append(
+        Paragraph(
+            "The following summary groups report findings by severity. Review the detailed pages for photographs, observations, recommendations, and inspector notes.",
+            styles["Body"],
+        )
+    )
+    story.append(Spacer(1, 0.16 * inch))
+
+    summary_cards = []
+    for severity in SEVERITIES:
+        severity_count = len(findings_by_severity.get(severity, []))
+        summary_cards.append(
+            [
+                Paragraph(str(severity_count), ParagraphStyle(name=f"{severity}Count", parent=styles["Normal"], fontName="Helvetica-Bold", fontSize=22, leading=25, textColor=SEVERITY_COLORS[severity], alignment=TA_CENTER)),
+                Paragraph(pdf_text(severity), ParagraphStyle(name=f"{severity}Label", parent=styles["Normal"], fontName="Helvetica-Bold", fontSize=8, leading=10, textColor=slate, alignment=TA_CENTER)),
+            ]
+        )
+    summary_table = Table([summary_cards], colWidths=[1.55 * inch] * 4)
+    summary_table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), colors.white),
+                ("BOX", (0, 0), (-1, -1), 0.5, border),
+                ("INNERGRID", (0, 0), (-1, -1), 0.35, border),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TOPPADDING", (0, 0), (-1, -1), 12),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
+            ]
+        )
+    )
+    story.append(summary_table)
+    story.append(Spacer(1, 0.12 * inch))
 
     for severity in SEVERITIES:
-        severity_findings = by_severity.get(severity, [])
-        story.append(Spacer(1, 0.12 * inch))
-        story.append(Paragraph(f"{severity} ({len(severity_findings)})", styles["Heading3"]))
+        severity_findings = findings_by_severity.get(severity, [])
+        story.append(Spacer(1, 0.16 * inch))
+        story.append(pdf_badge(f"{severity} ({len(severity_findings)})", severity, styles))
+        story.append(Spacer(1, 0.06 * inch))
         if severity_findings:
             rows = [["Category", "Location", "Finding"]]
             rows.extend(
@@ -208,62 +469,133 @@ def generate_pdf(payload: dict[str, Any]) -> Path:
             table.setStyle(
                 TableStyle(
                     [
-                        ("BACKGROUND", (0, 0), (-1, 0), SEVERITY_COLORS[severity]),
-                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-                        ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#d9e2ec")),
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#f2f4f7")),
+                        ("TEXTCOLOR", (0, 0), (-1, 0), navy),
+                        ("GRID", (0, 0), (-1, -1), 0.25, border),
                         ("VALIGN", (0, 0), (-1, -1), "TOP"),
                         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                        ("FONTSIZE", (0, 0), (-1, -1), 8.5),
+                        ("LEADING", (0, 0), (-1, -1), 11),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 7),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+                        ("TOPPADDING", (0, 0), (-1, -1), 6),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
                     ]
                 )
             )
             story.append(table)
         else:
-            story.append(Paragraph("No findings.", styles["Normal"]))
+            story.append(Paragraph("No findings documented at this severity.", styles["SmallMuted"]))
 
     story.append(PageBreak())
     story.append(Paragraph("Detailed Sections", styles["SectionTitle"]))
 
+    rendered_detail_section = False
     for section in SECTIONS:
         section_findings = [finding for finding in findings if finding["category"] == section]
-        story.append(Paragraph(pdf_text(section), styles["Heading2"]))
         if not section_findings:
-            story.append(Paragraph("No findings documented for this section.", styles["SmallMuted"]))
             continue
 
+        if rendered_detail_section:
+            story.append(PageBreak())
+        rendered_detail_section = True
+        story.append(Paragraph(pdf_text(section), styles["SectionTitle"]))
         for finding in section_findings:
-            story.append(Spacer(1, 0.1 * inch))
-            story.append(Paragraph(pdf_text(finding["title"]), styles["Heading3"]))
-            story.append(Paragraph(f"Severity: {pdf_text(finding['severity'])}", styles["Normal"]))
-            story.append(Paragraph(f"Location: {pdf_text(finding.get('location', 'Unspecified'))}", styles["Normal"]))
-            story.append(Paragraph(f"<b>Observation:</b> {pdf_text(finding['observation'])}", styles["Normal"]))
-            story.append(Paragraph(f"<b>Recommendation:</b> {pdf_text(finding['recommendation'])}", styles["Normal"]))
+            story.append(Spacer(1, 0.08 * inch))
+            finding_header = Table(
+                [
+                    [
+                        pdf_badge(finding["severity"], finding["severity"], styles),
+                        Paragraph(pdf_text(finding["title"]), styles["FindingTitle"]),
+                    ],
+                    [
+                        "",
+                        Paragraph(
+                            f"<b>Category:</b> {pdf_text(finding['category'])} &nbsp;&nbsp; <b>Location:</b> {pdf_text(finding.get('location', 'Unspecified location'))}",
+                            styles["SmallMuted"],
+                        ),
+                    ],
+                ],
+                colWidths=[1.22 * inch, 5.18 * inch],
+            )
+            finding_header.setStyle(
+                TableStyle(
+                    [
+                        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                        ("TOPPADDING", (0, 0), (-1, -1), 0),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+                    ]
+                )
+            )
+            detail_blocks: list[Any] = [finding_header, Spacer(1, 0.07 * inch)]
+
             if finding.get("notes"):
-                story.append(Paragraph(f"<b>Notes:</b> {pdf_text(finding['notes'])}", styles["Normal"]))
+                notes_block = Paragraph(f"<b>Notes:</b> {pdf_text(finding['notes'])}", styles["Body"])
+            else:
+                notes_block = None
+
             for photo_path in finding.get("photo_paths", []):
-                photo = image_flowable(photo_path, max_width=3.1 * inch, max_height=2.2 * inch)
+                photo = image_flowable(photo_path, max_width=6.25 * inch, max_height=3.45 * inch)
                 if photo:
-                    story.append(Spacer(1, 0.08 * inch))
-                    story.append(photo)
+                    detail_blocks.extend([photo, Spacer(1, 0.1 * inch)])
+
+            finding_table = Table(
+                [
+                    [Paragraph("Observation", styles["Label"])],
+                    [Paragraph(pdf_text(finding["observation"]), styles["Body"])],
+                    [Paragraph("Recommendation", styles["Label"])],
+                    [Paragraph(pdf_text(finding["recommendation"]), styles["Body"])],
+                ],
+                colWidths=[6.3 * inch],
+            )
+            finding_table.setStyle(
+                TableStyle(
+                    [
+                        ("BOX", (0, 0), (-1, -1), 0.5, border),
+                        ("BACKGROUND", (0, 0), (-1, 0), paper),
+                        ("BACKGROUND", (0, 2), (-1, 2), paper),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+                        ("TOPPADDING", (0, 0), (-1, -1), 7),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+                    ]
+                )
+            )
+            detail_blocks.append(finding_table)
+            if notes_block:
+                detail_blocks.extend([Spacer(1, 0.08 * inch), notes_block])
+
+            story.append(KeepTogether(detail_blocks))
+            story.append(Spacer(1, 0.18 * inch))
+
+    if not findings:
+        story.append(Paragraph("No findings have been documented for this report.", styles["Body"]))
 
     story.append(PageBreak())
     story.append(Paragraph("Final Recommendations", styles["SectionTitle"]))
     story.append(
         Paragraph(
-            "Major and Moderate findings should be evaluated by qualified professionals before the end of the inspection contingency period.",
-            styles["Normal"],
+            "Major and Moderate findings should be reviewed by qualified professionals before the end of the inspection contingency period. Minor and informational items should be used for routine maintenance planning.",
+            styles["FooterNote"],
         )
     )
-    story.append(Spacer(1, 0.2 * inch))
+    story.append(Spacer(1, 0.16 * inch))
     story.append(Paragraph("Limitations", styles["SectionTitle"]))
     story.append(
         Paragraph(
             pdf_text(report.get("limitations"))
-            or "This is a limited visual inspection of readily accessible systems and components. Hidden conditions, concealed defects, and code compliance are beyond the scope of this report.",
-            styles["Normal"],
+            or "This report reflects a limited visual inspection of readily accessible systems and components. Hidden conditions, concealed defects, and code compliance are outside the scope of this report.",
+            styles["FooterNote"],
         )
     )
 
-    doc.build(story)
+    doc.build(
+        story,
+        onFirstPage=lambda canvas, built_doc: pdf_footer(canvas, built_doc, report),
+        onLaterPages=lambda canvas, built_doc: pdf_footer(canvas, built_doc, report),
+    )
     return output_path
 
 
@@ -710,7 +1042,7 @@ def render_add_finding(defects: list[dict[str, Any]]) -> None:
 
     library_col, form_col = st.columns([1.1, 1], gap="large")
     with library_col:
-        search = st.text_input("Search 1,200+ standardized defects", placeholder="Try: roof, GFCI, leak, smoke...")
+        search = st.text_input("Search defect templates", placeholder="Try: roof, GFCI, leak, smoke...")
         selected_category = st.selectbox("Filter category", ["All", *SECTIONS], index=0)
         filtered_defects = [
             defect
