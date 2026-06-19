@@ -91,7 +91,7 @@ TRANSLATIONS = {
         "finding_editor": "Editor difetto",
         "search_defect_templates": "Cerca modelli difetto",
         "category": "Categoria",
-        "severity": "Gravita",
+        "severity": "Gravità",
         "defect_title": "Titolo difetto",
         "location": "Posizione",
         "observation": "Osservazione",
@@ -102,16 +102,42 @@ TRANSLATIONS = {
         "save_finding": "Aggiungi al report",
         "add_to_report": "Aggiungi al report",
         "report_generated": "Report generato correttamente",
-        "pdf_ready": "Il PDF e pronto.",
+        "pdf_ready": "Il PDF è pronto.",
         "finding_added": "Difetto aggiunto al report",
-        "findings_already_added": "Difetti gia aggiunti",
+        "findings_already_added": "Difetti già aggiunti",
         "remove": "Rimuovi",
         "search_findings": "Cerca per titolo, categoria, posizione...",
         "no_findings": "Nessun difetto aggiunto. Scegli un modello dalla libreria per iniziare.",
         "required_fields": "Titolo, osservazione e raccomandazione sono obbligatori.",
-        "template_hint": "Scegli un modello per precompilare il difetto, poi adattalo alla proprieta.",
+        "template_hint": "Scegli un modello per precompilare il difetto, poi adattalo alla proprietà.",
         "current_finding": "Difetto corrente",
         "optional_details": "Dettagli opzionali",
+        "language_card_title": "Lingua interfaccia",
+        "language_card_hint": "Scegli italiano o inglese.",
+        "inspection_report": "Report ispezione",
+        "workspace_caption": "Workspace per ispezioni residenziali",
+        "severity_distribution": "Distribuzione gravità",
+        "findings": "Difetti",
+        "findings_count": "difetti",
+        "priority_findings": "Difetti prioritari",
+        "report_pages": "Pagine report",
+        "pdf_preview_hint": "Anteprima visiva della struttura del report generato.",
+        "filter_category": "Filtra categoria",
+        "defect_templates_count": "modelli difetto",
+        "summary_hint": "Questo riepilogo evidenzia gli elementi più importanti rilevati durante l'ispezione di {address}. Va letto insieme ai dettagli e alle fotografie.",
+        "client_name": "Nome cliente",
+        "property_address": "Indirizzo immobile",
+        "inspection_date": "Data ispezione",
+        "inspector_name": "Ispettore",
+        "company_name": "Azienda",
+        "company_logo_optional": "Logo azienda opzionale",
+        "cover_photo_optional": "Foto copertina opzionale",
+        "limitations": "Limitazioni",
+        "total_findings": "Difetti totali",
+        "major_defects": "Difetti gravi",
+        "photos_captured": "Foto acquisite",
+        "systems_covered": "Sistemi coperti",
+        "no_priority_findings": "Nessun difetto prioritario aggiunto.",
     },
     "English": {
         "language": "Language",
@@ -146,6 +172,32 @@ TRANSLATIONS = {
         "template_hint": "Pick a template to pre-fill the finding, then refine it for the property.",
         "current_finding": "Current finding",
         "optional_details": "Optional details",
+        "language_card_title": "Interface language",
+        "language_card_hint": "Choose Italian or English.",
+        "inspection_report": "Inspection Report",
+        "workspace_caption": "Single family home inspection workspace",
+        "severity_distribution": "Severity Distribution",
+        "findings": "Findings",
+        "findings_count": "findings",
+        "priority_findings": "Priority Findings",
+        "report_pages": "Report Pages",
+        "pdf_preview_hint": "Visual approximation of the generated report structure.",
+        "filter_category": "Filter category",
+        "defect_templates_count": "defect templates",
+        "summary_hint": "This summary highlights the most significant items discovered during the inspection of {address}. It should be read together with the detailed findings and photographs.",
+        "client_name": "Client name",
+        "property_address": "Property address",
+        "inspection_date": "Inspection date",
+        "inspector_name": "Inspector name",
+        "company_name": "Company name",
+        "company_logo_optional": "Company logo optional",
+        "cover_photo_optional": "Cover photo optional",
+        "limitations": "Limitations",
+        "total_findings": "Total Findings",
+        "major_defects": "Major Defects",
+        "photos_captured": "Photos Captured",
+        "systems_covered": "Systems Covered",
+        "no_priority_findings": "No priority findings have been added yet.",
     },
 }
 
@@ -167,6 +219,10 @@ def slugify(value: str) -> str:
     value = value.lower().strip()
     value = re.sub(r"[^a-z0-9]+", "-", value)
     return value.strip("-") or "inspection-report"
+
+
+def safe_slug(value: Any) -> str:
+    return slugify(str(value or "finding"))
 
 
 def save_uploaded_file(uploaded_file: Any, report_id: str, folder_name: str) -> str | None:
@@ -1156,15 +1212,15 @@ def render_dashboard(property_address: str) -> None:
     photos = sum(1 for finding in findings if finding.get("temp_photo_paths") or finding.get("photo_paths"))
     systems = len({finding.get("category") for finding in findings}) or 0
 
-    st.markdown("<div class='ib-kicker'>Inspection Report</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='ib-kicker'>{t('inspection_report')}</div>", unsafe_allow_html=True)
     st.markdown(f"<h1 class='ib-title'>{h(property_address)}</h1>", unsafe_allow_html=True)
-    st.markdown("<div class='ib-muted'>Single family home inspection workspace</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='ib-muted'>{t('workspace_caption')}</div>", unsafe_allow_html=True)
 
     metric_cols = st.columns(4)
-    metric_cols[0].metric("Total Findings", len(findings), "Across all systems")
-    metric_cols[1].metric("Major Defects", counts["Major"], "Need immediate attention")
-    metric_cols[2].metric("Photos Captured", photos, "Documented evidence")
-    metric_cols[3].metric("Systems Covered", systems, "Per inspection standards")
+    metric_cols[0].metric(t("total_findings"), len(findings), "Across all systems")
+    metric_cols[1].metric(t("major_defects"), counts["Major"], "Need immediate attention")
+    metric_cols[2].metric(t("photos_captured"), photos, "Documented evidence")
+    metric_cols[3].metric(t("systems_covered"), systems, "Per inspection standards")
 
     st.markdown("<br>", unsafe_allow_html=True)
     total = max(len(findings), 1)
@@ -1183,8 +1239,8 @@ def render_dashboard(property_address: str) -> None:
         f"""
         <div class="ib-card">
           <div style="display:flex;justify-content:space-between;align-items:center;">
-            <strong>Severity Distribution</strong>
-            <span class="ib-muted">{len(findings)} findings</span>
+            <strong>{t('severity_distribution')}</strong>
+            <span class="ib-muted">{len(findings)} {t('findings_count')}</span>
           </div>
           <div class="ib-bar" style="margin-top:.9rem;">{segments}</div>
           <div style="margin-top:.8rem;font-size:.84rem;">{legend}</div>
@@ -1193,11 +1249,11 @@ def render_dashboard(property_address: str) -> None:
         unsafe_allow_html=True,
     )
 
-    st.markdown("### Findings")
+    st.markdown(f"### {t('findings')}")
     search = st.text_input("Search findings", placeholder=t("search_findings"), label_visibility="collapsed")
     visible = [
-        finding
-        for finding in findings
+        (original_index, finding)
+        for original_index, finding in enumerate(findings)
         if not search
         or search.lower()
         in " ".join(
@@ -1215,7 +1271,7 @@ def render_dashboard(property_address: str) -> None:
         st.info(t("no_findings"))
         return
 
-    for index, finding in enumerate(visible):
+    for display_index, (original_index, finding) in enumerate(visible, start=1):
         with st.container(border=True):
             image_col, body_col, action_col = st.columns([0.22, 0.66, 0.12], vertical_alignment="center")
             image_col.image(first_photo_for_finding(finding), use_container_width=True)
@@ -1229,8 +1285,8 @@ def render_dashboard(property_address: str) -> None:
                 """,
                 unsafe_allow_html=True,
             )
-            original_index = st.session_state["findings"].index(finding)
-            if action_col.button(t("remove"), key=f"remove-dashboard-{original_index}"):
+            remove_key = f"remove_dashboard_{display_index}_{original_index}_{safe_slug(finding.get('title', 'finding'))}"
+            if action_col.button(t("remove"), key=remove_key):
                 st.session_state["findings"].pop(original_index)
                 st.rerun()
 
@@ -1243,7 +1299,7 @@ def render_add_finding(defects: list[dict[str, Any]]) -> None:
     library_col, form_col = st.columns([1.1, 1], gap="large")
     with library_col:
         search = st.text_input(t("search_defect_templates"), placeholder="roof, GFCI, leak, smoke...")
-        selected_category = st.selectbox(t("category"), ["All", *SECTIONS], index=0)
+        selected_category = st.selectbox(t("filter_category"), ["All", *SECTIONS], index=0)
         filtered_defects = [
             defect
             for defect in defects
@@ -1254,7 +1310,7 @@ def render_add_finding(defects: list[dict[str, Any]]) -> None:
                 in " ".join([defect["category"], defect["title"], defect["observation"], defect["recommendation"]]).lower()
             )
         ]
-        st.caption(f"{len(filtered_defects)} defect templates")
+        st.caption(f"{len(filtered_defects)} {t('defect_templates_count')}")
         for defect in filtered_defects:
             with st.container(border=True):
                 st.markdown(
@@ -1310,19 +1366,21 @@ def render_add_finding(defects: list[dict[str, Any]]) -> None:
     st.markdown(f"### {t('findings_already_added')}")
     if not st.session_state["findings"]:
         st.info(t("no_findings"))
-    for index, finding in enumerate(st.session_state["findings"], start=1):
+    for original_index, finding in enumerate(st.session_state["findings"]):
+        display_index = original_index + 1
         with st.container(border=True):
             title_col, remove_col = st.columns([0.82, 0.18], vertical_alignment="center")
             title_col.markdown(
                 f"""
                 {severity_badge(finding.get("severity", "Informational"))}
                 <span class="ib-muted" style="font-size:.78rem;margin-left:.5rem;">{h(finding.get("category"))}</span>
-                <div class="ib-finding-title">{index}. {h(finding.get("title"))}</div>
+                <div class="ib-finding-title">{display_index}. {h(finding.get("title"))}</div>
                 """,
                 unsafe_allow_html=True,
             )
-            if remove_col.button(t("remove"), key=f"remove-add-{index}"):
-                st.session_state["findings"].pop(index - 1)
+            remove_key = f"remove_added_{display_index}_{original_index}_{safe_slug(finding.get('title', 'finding'))}"
+            if remove_col.button(t("remove"), key=remove_key):
+                st.session_state["findings"].pop(original_index)
                 st.rerun()
 
 
@@ -1334,7 +1392,7 @@ def render_summary(property_address: str, inspector_name: str, company_name: str
     st.markdown(f"<div class='ib-kicker'>{t('summary')}</div>", unsafe_allow_html=True)
     st.markdown(f"<h1 class='ib-title'>{t('summary')}</h1>", unsafe_allow_html=True)
     st.markdown(
-        f"<p class='ib-muted'>This summary highlights the most significant items discovered during the inspection of {h(property_address)}. It should be read together with the detailed findings and photographs.</p>",
+        f"<p class='ib-muted'>{t('summary_hint').format(address=h(property_address))}</p>",
         unsafe_allow_html=True,
     )
 
@@ -1352,9 +1410,9 @@ def render_summary(property_address: str, inspector_name: str, company_name: str
             unsafe_allow_html=True,
         )
 
-    st.markdown("### Priority Findings")
+    st.markdown(f"### {t('priority_findings')}")
     if not priority:
-        st.info("No findings have been added yet.")
+        st.info(t("no_priority_findings"))
     for index, finding in enumerate(priority, start=1):
         with st.container(border=True):
             st.markdown(
@@ -1390,8 +1448,8 @@ def render_pdf_preview(client_name: str, property_address: str, inspection_date:
     counts = severity_counts(findings)
 
     st.markdown(f"<div class='ib-kicker'>{t('pdf_preview')}</div>", unsafe_allow_html=True)
-    st.markdown("<h1 class='ib-title'>Report Pages</h1>", unsafe_allow_html=True)
-    st.markdown("<div class='ib-muted'>Visual approximation of the generated report structure.</div>", unsafe_allow_html=True)
+    st.markdown(f"<h1 class='ib-title'>{t('report_pages')}</h1>", unsafe_allow_html=True)
+    st.markdown(f"<div class='ib-muted'>{t('pdf_preview_hint')}</div>", unsafe_allow_html=True)
 
     st.markdown(
         f"""
@@ -1458,16 +1516,25 @@ def main() -> None:
     inject_css()
 
     with st.sidebar:
+        st.markdown(
+            f"""
+            <div class="ib-card" style="padding:.85rem;margin-bottom:.85rem;">
+              <div class="ib-section-label" style="margin:0 0 .35rem;">{t('language_card_title')}</div>
+              <div class="ib-muted" style="font-size:.82rem;">{t('language_card_hint')}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         st.selectbox(t("language"), ["Italiano", "English"], key="language")
-        client_name = st.text_input("Client name", value="John Smith")
-        property_address = st.text_area("Property address", value="123 Main St, Austin, TX")
-        inspection_date = st.date_input("Inspection date", value=date.today())
-        inspector_name = st.text_input("Inspector name", value="Alex Inspector")
-        company_name = st.text_input("Company name", value="Example Home Inspections")
-        company_logo = st.file_uploader("Company logo optional", type=["png", "jpg", "jpeg"])
-        cover_photo = st.file_uploader("Cover photo optional", type=["png", "jpg", "jpeg"])
+        client_name = st.text_input(t("client_name"), value="John Smith")
+        property_address = st.text_area(t("property_address"), value="123 Main St, Austin, TX")
+        inspection_date = st.date_input(t("inspection_date"), value=date.today())
+        inspector_name = st.text_input(t("inspector_name"), value="Alex Inspector")
+        company_name = st.text_input(t("company_name"), value="Example Home Inspections")
+        company_logo = st.file_uploader(t("company_logo_optional"), type=["png", "jpg", "jpeg"])
+        cover_photo = st.file_uploader(t("cover_photo_optional"), type=["png", "jpg", "jpeg"])
         limitations = st.text_area(
-            "Limitations",
+            t("limitations"),
             value="This report is based on a limited visual inspection of readily accessible areas.",
         )
         render_sidebar_summary(client_name, property_address, inspection_date, inspector_name, company_name, cover_photo)
