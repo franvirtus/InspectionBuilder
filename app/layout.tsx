@@ -36,7 +36,6 @@ export const metadata: Metadata = {
   title: 'InspectionBuilder — Professional Home Inspection Reports',
   description:
     'Build polished, photo-first home inspection PDF reports in minutes. Defect library, severity grading, and instant report generation for home, roof, and HVAC inspectors.',
-  generator: 'v0.app',
   icons: {
     icon: [
       {

@@ -7,9 +7,12 @@ import {
   CheckCircle2,
   ChevronRight,
   ClipboardCheck,
+  Download,
   Edit2,
+  FilePlus2,
   MapPin,
   ShieldCheck,
+  Upload,
   User,
   UserCircle2,
 } from "lucide-react"
@@ -57,10 +60,16 @@ export function ReportSidebar({
   findings,
   reportDetails,
   onEditDetails,
+  onNewReport,
+  onExport,
+  onImport,
 }: {
   findings: Finding[]
   reportDetails: ReportDetails
   onEditDetails: () => void
+  onNewReport: () => void
+  onExport: () => void
+  onImport: () => void
 }) {
   const d = reportDetails
   const counts = severityCounts(findings)
@@ -169,8 +178,36 @@ export function ReportSidebar({
         </div>
       </div>
 
-      {/* Footer status */}
-      <div className="border-t border-sidebar-border p-3">
+      {/* Footer */}
+      <div className="border-t border-sidebar-border p-3 space-y-2">
+        {/* Report actions */}
+        <div className="flex gap-1.5">
+          <button
+            onClick={onNewReport}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-sidebar-border bg-sidebar-accent px-2 py-2 text-xs font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent/80"
+          >
+            <FilePlus2 className="size-3.5" />
+            New Report
+          </button>
+          <button
+            onClick={onExport}
+            title="Export report data as JSON"
+            className="flex items-center justify-center gap-1.5 rounded-lg border border-sidebar-border bg-sidebar-accent px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent/80 hover:text-sidebar-foreground"
+          >
+            <Download className="size-3.5" />
+            Export
+          </button>
+          <button
+            onClick={onImport}
+            title="Import report data from JSON"
+            className="flex items-center justify-center gap-1.5 rounded-lg border border-sidebar-border bg-sidebar-accent px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent/80 hover:text-sidebar-foreground"
+          >
+            <Upload className="size-3.5" />
+            Import
+          </button>
+        </div>
+
+        {/* Completion */}
         <div className="flex items-center justify-between rounded-lg bg-sidebar-accent px-3 py-2.5">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="size-4 text-primary" />
@@ -183,7 +220,8 @@ export function ReportSidebar({
             <ChevronRight className="size-4 text-muted-foreground" />
           </button>
         </div>
-        <div className="mt-2 flex items-center gap-1.5 px-1 text-[11px] text-muted-foreground">
+
+        <div className="flex items-center gap-1.5 px-1 text-[11px] text-muted-foreground">
           <ShieldCheck className="size-3.5" />
           TREC-compliant template
         </div>

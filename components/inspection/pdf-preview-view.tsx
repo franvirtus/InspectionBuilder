@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { ClipboardCheck, Printer } from "lucide-react"
+import { AlertTriangle, ClipboardCheck, Printer } from "lucide-react"
 import {
   SEVERITY_ORDER,
   severityCounts,
@@ -62,6 +62,21 @@ export function PdfPreviewView({
           Print / Save PDF
         </Button>
       </div>
+
+      {/* Completeness warning */}
+      {(!d.inspector || !d.address || findings.length === 0) && (
+        <div className="mx-auto mb-4 max-w-[760px] flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-500" />
+          <div className="text-sm">
+            <p className="font-medium text-foreground">Report is incomplete</p>
+            <ul className="mt-1 space-y-0.5 text-muted-foreground">
+              {!d.inspector && <li>· Inspector name is missing (Report Setup)</li>}
+              {!d.address && <li>· Property address is missing (Report Setup)</li>}
+              {findings.length === 0 && <li>· No findings have been added yet</li>}
+            </ul>
+          </div>
+        </div>
+      )}
 
       {/* Print area — only this is shown when printing */}
       <div id="pdf-print-area" className="space-y-6">

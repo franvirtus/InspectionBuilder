@@ -108,6 +108,7 @@ export function DashboardView({
   onSetup: () => void
 }) {
   const [search, setSearch] = useState("")
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const counts = severityCounts(findings)
   const photos = findings.filter((f) => f.photo).length
@@ -280,16 +281,33 @@ export function DashboardView({
                           {f.location}
                         </p>
                       </div>
-                      <button
-                        aria-label="Remove finding"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onRemoveFinding(f.id)
-                        }}
-                        className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition hover:bg-destructive/15 hover:text-destructive group-hover:opacity-100"
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
+                      {confirmDeleteId === f.id ? (
+                        <div className="flex shrink-0 items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onRemoveFinding(f.id); setConfirmDeleteId(null) }}
+                            className="rounded-md bg-destructive/15 px-2 py-1 text-xs font-medium text-destructive transition hover:bg-destructive/25"
+                          >
+                            Remove
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null) }}
+                            className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition hover:bg-accent"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          aria-label="Remove finding"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setConfirmDeleteId(f.id)
+                          }}
+                          className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition hover:bg-destructive/15 hover:text-destructive group-hover:opacity-100"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+                      )}
                     </div>
                     <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                       {f.observation}
