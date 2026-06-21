@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Download,
   FileText,
@@ -31,11 +31,47 @@ const NAV: { id: View; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "settings", label: "Report Setup", icon: Settings2 },
 ]
 
+const LS_FINDINGS = "ib_findings"
+const LS_DETAILS = "ib_report_details"
+
+function loadFindings(): Finding[] {
+  try {
+    const raw = localStorage.getItem(LS_FINDINGS)
+    if (raw) return JSON.parse(raw) as Finding[]
+  } catch {}
+  return SAMPLE_FINDINGS
+}
+
+function loadDetails(): ReportDetails {
+  try {
+    const raw = localStorage.getItem(LS_DETAILS)
+    if (raw) return { ...DEFAULT_REPORT_DETAILS, ...JSON.parse(raw) }
+  } catch {}
+  return DEFAULT_REPORT_DETAILS
+}
+
 export default function Page() {
   const [view, setView] = useState<View>("dashboard")
   const [findings, setFindings] = useState<Finding[]>(SAMPLE_FINDINGS)
   const [reportDetails, setReportDetails] = useState<ReportDetails>(DEFAULT_REPORT_DETAILS)
   const [mobileNav, setMobileNav] = useState(false)
+  const [hydrated, setHydrated] = useState(false)
+
+  useEffect(() => {
+    setFindings(loadFindings())
+    setReportDetails(loadDetails())
+    setHydrated(true)
+  }, [])
+
+  useEffect(() => {
+    if (!hydrated) return
+    localStorage.setItem(LS_FINDINGS, JSON.stringify(findings))
+  }, [findings, hydrated])
+
+  useEffect(() => {
+    if (!hydrated) return
+    localStorage.setItem(LS_DETAILS, JSON.stringify(reportDetails))
+  }, [reportDetails, hydrated])
 
   function addFinding(f: Finding) {
     setFindings((prev) => [f, ...prev])
