@@ -11,7 +11,7 @@ import {
   Settings2,
   X,
 } from "lucide-react"
-import { SAMPLE_FINDINGS, DEFAULT_REPORT_DETAILS, type Finding, type ReportDetails } from "@/lib/inspection"
+import { DEFAULT_REPORT_DETAILS, type Finding, type ReportDetails } from "@/lib/inspection"
 import { ReportSidebar } from "@/components/inspection/report-sidebar"
 import { DashboardView } from "@/components/inspection/dashboard-view"
 import { AddFindingView } from "@/components/inspection/add-finding-view"
@@ -39,7 +39,7 @@ function loadFindings(): Finding[] {
     const raw = localStorage.getItem(LS_FINDINGS)
     if (raw) return JSON.parse(raw) as Finding[]
   } catch {}
-  return SAMPLE_FINDINGS
+  return []
 }
 
 function loadDetails(): ReportDetails {
@@ -52,7 +52,7 @@ function loadDetails(): ReportDetails {
 
 export default function Page() {
   const [view, setView] = useState<View>("dashboard")
-  const [findings, setFindings] = useState<Finding[]>(SAMPLE_FINDINGS)
+  const [findings, setFindings] = useState<Finding[]>([])
   const [reportDetails, setReportDetails] = useState<ReportDetails>(DEFAULT_REPORT_DETAILS)
   const [mobileNav, setMobileNav] = useState(false)
   const [hydrated, setHydrated] = useState(false)
@@ -170,9 +170,11 @@ export default function Page() {
           {view === "dashboard" && (
             <DashboardView
               findings={findings}
+              reportDetails={reportDetails}
               onAddFinding={() => setView("add")}
               onSelectFinding={() => setView("add")}
               onRemoveFinding={removeFinding}
+              onSetup={() => setView("settings")}
             />
           )}
           {view === "add" && (
