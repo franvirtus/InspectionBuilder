@@ -1,10 +1,11 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useRef, useMemo, useState } from "react"
 import Image from "next/image"
 import {
   Check,
   ImagePlus,
+  Loader2,
   MapPin,
   Plus,
   Search,
@@ -61,6 +62,9 @@ export function AddFindingView({
   const [category, setCategory] = useState<string>("All")
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const filtered = useMemo(() => {
     return DEFECT_LIBRARY.filter((d) => {
@@ -88,6 +92,29 @@ export function AddFindingView({
 
   function update<K extends keyof Draft>(key: K, value: Draft[K]) {
     setDraft((d) => ({ ...d, [key]: value }))
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setUploadError(null)
+    try {
+      const form = new FormData()
+      form.append("file", file)
+      const res = await fetch("/api/upload", { method: "POST", body: form })
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        throw new Error((json as { error?: string }).error ?? "Upload failed")
+      }
+      const { url } = await res.json() as { url: string }
+      update("photo", url)
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed")
+    } finally {
+      setUploading(false)
+      e.target.value = ""
+    }
   }
 
   const canSave = draft.title.trim().length > 0
@@ -219,15 +246,29 @@ export function AddFindingView({
         <div className="flex-1 overflow-y-auto px-5 py-5">
           {/* Photo upload */}
           <label className="mb-1.5 block text-sm font-medium">Photo</label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="sr-only"
+            onChange={handleFileChange}
+          />
           <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl border border-dashed border-border bg-card">
-            {draft.photo ? (
+            {uploading ? (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                <Loader2 className="size-8 animate-spin" />
+                <span className="text-sm">Uploading…</span>
+              </div>
+            ) : draft.photo ? (
               <>
                 <Image
-                  src={draft.photo || "/placeholder.svg"}
+                  src={draft.photo}
                   alt="Finding photo"
                   fill
                   className="object-cover"
                   sizes="400px"
+                  unoptimized
                 />
                 <button
                   onClick={() => update("photo", undefined)}
@@ -239,19 +280,20 @@ export function AddFindingView({
               </>
             ) : (
               <button
-                onClick={() =>
-                  update("photo", PHOTO_BY_CATEGORY[draft.category] ?? "/inspection/defect-roof.png")
-                }
+                onClick={() => fileInputRef.current?.click()}
                 className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
               >
                 <span className="flex size-10 items-center justify-center rounded-full bg-muted">
                   <ImagePlus className="size-5" />
                 </span>
                 <span className="text-sm font-medium">Upload or capture photo</span>
-                <span className="text-xs">Drag & drop or click to browse</span>
+                <span className="text-xs">Tap to browse or take a photo</span>
               </button>
             )}
           </div>
+          {uploadError && (
+            <p className="mt-1.5 text-xs text-destructive">{uploadError}</p>
+          )}
 
           {/* Title */}
           <div className="mt-4">
@@ -321,7 +363,7 @@ export function AddFindingView({
           <div className="mt-4">
             <div className="mb-1.5 flex items-center justify-between">
               <label className="text-sm font-medium">Recommendation</label>
-              </div>
+            </div>
             <textarea
               value={draft.recommendation}
               onChange={(e) => update("recommendation", e.target.value)}
@@ -336,7 +378,7 @@ export function AddFindingView({
           <Button variant="outline" className="flex-1" onClick={onCancel}>
             Cancel
           </Button>
-          <Button className="flex-1 gap-1.5" disabled={!canSave} onClick={handleSave}>
+          <Button className="flex-1 gap-1.5" disabled={!canSave || uploading} onClick={handleSave}>
             <Check className="size-4" />
             Save Finding
           </Button>
