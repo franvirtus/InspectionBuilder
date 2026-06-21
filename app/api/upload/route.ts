@@ -15,10 +15,12 @@ export async function POST(request: Request) {
     }
 
     const blob = await put(`findings/${Date.now()}-${file.name}`, file, {
-      access: "public",
+      access: "private",
     })
 
-    return NextResponse.json({ url: blob.url })
+    // Return the blob URL — served through /api/photo proxy
+    const proxyUrl = `/api/photo?url=${encodeURIComponent(blob.url)}`
+    return NextResponse.json({ url: proxyUrl })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error("[upload]", message)
