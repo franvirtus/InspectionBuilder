@@ -54,6 +54,7 @@ export default function Page() {
   const [view, setView] = useState<View>("dashboard")
   const [findings, setFindings] = useState<Finding[]>(SAMPLE_FINDINGS)
   const [reportDetails, setReportDetails] = useState<ReportDetails>(DEFAULT_REPORT_DETAILS)
+  const [editingFinding, setEditingFinding] = useState<Finding | null>(null)
   const [mobileNav, setMobileNav] = useState(false)
   const [hydrated, setHydrated] = useState(false)
 
@@ -78,8 +79,19 @@ export default function Page() {
     setView("dashboard")
   }
 
+  function updateFinding(f: Finding) {
+    setFindings((prev) => prev.map((x) => (x.id === f.id ? f : x)))
+    setEditingFinding(null)
+    setView("dashboard")
+  }
+
   function removeFinding(id: string) {
     setFindings((prev) => prev.filter((f) => f.id !== id))
+  }
+
+  function startEditing(f: Finding) {
+    setEditingFinding(f)
+    setView("add")
   }
 
   function handleGeneratePdf() {
@@ -94,6 +106,7 @@ export default function Page() {
           findings={findings}
           reportDetails={reportDetails}
           onEditDetails={() => setView("settings")}
+          onEditFinding={startEditing}
         />
       </div>
 
@@ -116,6 +129,7 @@ export default function Page() {
               findings={findings}
               reportDetails={reportDetails}
               onEditDetails={() => { setView("settings"); setMobileNav(false) }}
+              onEditFinding={(f) => { startEditing(f); setMobileNav(false) }}
             />
           </div>
         </div>
@@ -170,15 +184,18 @@ export default function Page() {
           {view === "dashboard" && (
             <DashboardView
               findings={findings}
-              onAddFinding={() => setView("add")}
-              onSelectFinding={() => setView("add")}
+              reportDetails={reportDetails}
+              onAddFinding={() => { setEditingFinding(null); setView("add") }}
+              onEditFinding={startEditing}
               onRemoveFinding={removeFinding}
             />
           )}
           {view === "add" && (
             <AddFindingView
+              initialFinding={editingFinding ?? undefined}
               onSave={addFinding}
-              onCancel={() => setView("dashboard")}
+              onUpdate={updateFinding}
+              onCancel={() => { setEditingFinding(null); setView("dashboard") }}
             />
           )}
           {view === "summary" && (

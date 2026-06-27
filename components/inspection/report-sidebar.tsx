@@ -57,10 +57,12 @@ export function ReportSidebar({
   findings,
   reportDetails,
   onEditDetails,
+  onEditFinding,
 }: {
   findings: Finding[]
   reportDetails: ReportDetails
   onEditDetails: () => void
+  onEditFinding: (f: Finding) => void
 }) {
   const d = reportDetails
   const counts = severityCounts(findings)

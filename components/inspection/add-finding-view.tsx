@@ -52,15 +52,32 @@ const EMPTY_DRAFT: Draft = {
 }
 
 export function AddFindingView({
+  initialFinding,
   onSave,
+  onUpdate,
   onCancel,
 }: {
+  initialFinding?: Finding
   onSave: (f: Finding) => void
+  onUpdate?: (f: Finding) => void
   onCancel: () => void
 }) {
+  const isEditing = !!initialFinding
   const [query, setQuery] = useState("")
   const [category, setCategory] = useState<string>("All")
-  const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT)
+  const [draft, setDraft] = useState<Draft>(
+    initialFinding
+      ? {
+          title: initialFinding.title,
+          category: initialFinding.category,
+          severity: initialFinding.severity,
+          location: initialFinding.location,
+          observation: initialFinding.observation,
+          recommendation: initialFinding.recommendation,
+          photo: initialFinding.photo,
+        }
+      : EMPTY_DRAFT
+  )
   const [activeId, setActiveId] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -121,16 +138,29 @@ export function AddFindingView({
 
   function handleSave() {
     if (!canSave) return
-    onSave({
-      id: `f${Date.now()}`,
-      title: draft.title,
-      category: draft.category,
-      severity: draft.severity,
-      location: draft.location || "Unspecified location",
-      observation: draft.observation,
-      recommendation: draft.recommendation,
-      photo: draft.photo,
-    })
+    if (isEditing && initialFinding && onUpdate) {
+      onUpdate({
+        ...initialFinding,
+        title: draft.title,
+        category: draft.category,
+        severity: draft.severity,
+        location: draft.location || "Unspecified location",
+        observation: draft.observation,
+        recommendation: draft.recommendation,
+        photo: draft.photo,
+      })
+    } else {
+      onSave({
+        id: `f${Date.now()}`,
+        title: draft.title,
+        category: draft.category,
+        severity: draft.severity,
+        location: draft.location || "Unspecified location",
+        observation: draft.observation,
+        recommendation: draft.recommendation,
+        photo: draft.photo,
+      })
+    }
   }
 
   return (
@@ -239,8 +269,12 @@ export function AddFindingView({
       {/* Finding editor */}
       <section className="flex w-full shrink-0 flex-col bg-card/40 lg:w-[400px]">
         <div className="border-b border-border px-5 py-4">
-          <h2 className="text-lg font-semibold tracking-tight">Finding Editor</h2>
-          <p className="text-sm text-muted-foreground">Current finding</p>
+          <h2 className="text-lg font-semibold tracking-tight">
+            {isEditing ? "Edit Finding" : "Finding Editor"}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {isEditing ? "Modify and save changes" : "Current finding"}
+          </p>
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-5">
@@ -380,7 +414,7 @@ export function AddFindingView({
           </Button>
           <Button className="flex-1 gap-1.5" disabled={!canSave || uploading} onClick={handleSave}>
             <Check className="size-4" />
-            Save Finding
+            {isEditing ? "Update Finding" : "Save Finding"}
           </Button>
         </div>
       </section>

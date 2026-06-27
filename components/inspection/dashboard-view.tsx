@@ -6,6 +6,7 @@ import {
   Camera,
   LayoutGrid,
   MapPin,
+  Pencil,
   Plus,
   Search,
   Trash2,
@@ -15,6 +16,7 @@ import {
   SEVERITY_ORDER,
   severityCounts,
   type Finding,
+  type ReportDetails,
 } from "@/lib/inspection"
 import { SeverityBadge } from "./severity-badge"
 import { Button } from "@/components/ui/button"
@@ -54,17 +56,22 @@ function StatCard({
 
 export function DashboardView({
   findings,
+  reportDetails,
   onAddFinding,
-  onSelectFinding,
+  onEditFinding,
   onRemoveFinding,
 }: {
   findings: Finding[]
+  reportDetails: ReportDetails
   onAddFinding: () => void
-  onSelectFinding: (f: Finding) => void
+  onEditFinding: (f: Finding) => void
   onRemoveFinding: (id: string) => void
 }) {
   const counts = severityCounts(findings)
   const photos = findings.filter((f) => f.photo).length
+
+  const displayAddress = reportDetails.address || "Property address not set"
+  const displayCityState = reportDetails.cityState || ""
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-6 md:px-8">
@@ -73,12 +80,14 @@ export function DashboardView({
         <div>
           <p className="text-sm font-medium text-primary">Inspection Report</p>
           <h1 className="mt-1 text-balance text-2xl font-semibold tracking-tight md:text-3xl">
-            4827 Magnolia Crest Drive
+            {displayAddress}
           </h1>
-          <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-            <MapPin className="size-4" />
-            Austin, TX 78745 · Single Family · 2,140 sq ft
-          </p>
+          {displayCityState && (
+            <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+              <MapPin className="size-4" />
+              {displayCityState}
+            </p>
+          )}
         </div>
         <Button onClick={onAddFinding} size="lg" className="gap-2">
           <Plus className="size-4" />
@@ -163,17 +172,17 @@ export function DashboardView({
           {findings.map((f) => (
             <article
               key={f.id}
-              className="group flex cursor-pointer gap-4 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/40 hover:bg-accent/40"
-              onClick={() => onSelectFinding(f)}
+              className="group flex gap-4 rounded-xl border border-border bg-card p-3 transition-colors hover:border-primary/40 hover:bg-accent/40"
             >
               <div className="relative size-24 shrink-0 overflow-hidden rounded-lg bg-muted sm:size-28">
                 {f.photo ? (
                   <Image
-                    src={f.photo || "/placeholder.svg"}
+                    src={f.photo}
                     alt={f.title}
                     fill
                     className="object-cover"
                     sizes="112px"
+                    unoptimized
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center text-muted-foreground">
@@ -198,16 +207,22 @@ export function DashboardView({
                       {f.location}
                     </p>
                   </div>
-                  <button
-                    aria-label="Remove finding"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onRemoveFinding(f.id)
-                    }}
-                    className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition hover:bg-destructive/15 hover:text-destructive group-hover:opacity-100"
-                  >
-                    <Trash2 className="size-4" />
-                  </button>
+                  <div className="flex shrink-0 items-center gap-1 opacity-0 transition group-hover:opacity-100">
+                    <button
+                      aria-label="Edit finding"
+                      onClick={() => onEditFinding(f)}
+                      className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+                    >
+                      <Pencil className="size-4" />
+                    </button>
+                    <button
+                      aria-label="Remove finding"
+                      onClick={() => onRemoveFinding(f.id)}
+                      className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/15 hover:text-destructive"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
                 </div>
                 <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                   {f.observation}
